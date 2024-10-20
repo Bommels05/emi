@@ -1,6 +1,6 @@
 package dev.emi.emi.recipe.special;
 
-import java.util.List;
+/*import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -71,4 +71,4 @@ public class EmiBannerShieldRecipe extends EmiPatternCraftingRecipe {
 		//stack.setNbt(tag);
 		return EmiStack.of(stack);
 	}
-}
+}*/

@@ -1,6 +1,9 @@
 package dev.emi.emi.runtime;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.nio.IntBuffer;
 import java.util.function.Consumer;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -9,17 +12,23 @@ import dev.emi.emi.EmiPort;
 import dev.emi.emi.config.EmiConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.gl.SimpleFramebuffer;
-import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.gui.DrawableHelper;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.util.ScreenshotUtils;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.ClickEvent;
+import net.minecraft.text.ClickEventAction;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.Matrix4f;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+
+import javax.imageio.ImageIO;
 
 public class EmiScreenshotRecorder {
 	private static final String SCREENSHOTS_DIRNAME = "screenshots";
+	private static IntBuffer intBuffer;
+	private static int[] data;
 
 	/**
 	 * Saves a screenshot to the game's `screenshots` directory, doing the appropriate setup so that anything rendered in renderer will be captured
@@ -39,11 +48,7 @@ public class EmiScreenshotRecorder {
 	 * @param renderer a function to render the things being screenshotted.
 	 */
 	public static void saveScreenshot(String path, int width, int height, Runnable renderer) {
-		if (!RenderSystem.isOnRenderThread()) {
-			RenderSystem.recordRenderCall(() -> saveScreenshotInner(path, width, height, renderer));
-		} else {
-			saveScreenshotInner(path, width, height, renderer);
-		}
+		saveScreenshotInner(path, width, height, renderer);
 	}
 
 	private static void saveScreenshotInner(String path, int width, int height, Runnable renderer) {
@@ -56,38 +61,34 @@ public class EmiScreenshotRecorder {
 			scale = EmiConfig.recipeScreenshotScale;
 		}
 
-		Framebuffer framebuffer = new SimpleFramebuffer(width * scale, height * scale, true, MinecraftClient.IS_SYSTEM_MAC);
+		Framebuffer framebuffer = new Framebuffer(width * scale, height * scale, true);
 		framebuffer.setClearColor(0f, 0f, 0f, 0f);
-		framebuffer.clear(MinecraftClient.IS_SYSTEM_MAC);
+		framebuffer.attachTexture(width * scale, height * scale);
 
-		framebuffer.beginWrite(true);
+		framebuffer.bind(true);
 
 		MatrixStack view = RenderSystem.getModelViewStack();
 		view.push();
-		view.loadIdentity();
-		view.translate(-1.0, 1.0, 0.0);
-		view.scale(2f / width, -2f / height, -1f / 1000f);
-		view.translate(0.0, 0.0, 10.0);
+		//view.translate(-1.0, 1.0, 0.0);
+		//todo find right scale
+		view.scale(scale + 2, scale + 2, 0);
+		//view.translate(0.0, 0.0, 10.0);
 		RenderSystem.applyModelViewMatrix();
-
-		Matrix4f backupProj = RenderSystem.getProjectionMatrix();
-		RenderSystem.setProjectionMatrix(Util.make(new Matrix4f(), Matrix4f::loadIdentity));
-
 		renderer.run();
 
-		RenderSystem.setProjectionMatrix(backupProj);
 		view.pop();
 		RenderSystem.applyModelViewMatrix();
 
-		framebuffer.endWrite();
-		client.getFramebuffer().beginWrite(true);
+		framebuffer.unbind();
+		client.getFramebuffer().bind(true);
 
-		saveScreenshotInner(client.runDirectory, path, framebuffer,
-			message -> client.execute(() -> client.inGameHud.getChatHud().addMessage(message)));
+		client.inGameHud.getChatHud().addMessage(ScreenshotUtils.saveScreenshot(client.runDirectory, width * scale, height * scale, framebuffer));
+		/*saveScreenshotInner(client.runDirectory, path, framebuffer,
+			message -> client.method_6635(() -> client.inGameHud.getChatHud().addMessage(message)));*/
 	}
 
 	private static void saveScreenshotInner(File gameDirectory, String suggestedPath, Framebuffer framebuffer, Consumer<Text> messageReceiver) {
-		NativeImage nativeImage = takeScreenshot(framebuffer);
+		BufferedImage image = takeScreenshot(framebuffer);
 
 		File screenshots = new File(gameDirectory, SCREENSHOTS_DIRNAME);
 		screenshots.mkdir();
@@ -100,31 +101,48 @@ public class EmiScreenshotRecorder {
 		File parent = file.getParentFile();
 		parent.mkdirs();
 
-		Util.getIoWorkerExecutor().execute(() -> {
-			try {
-				nativeImage.writeTo(file);
+		try {
+			ImageIO.write(image, "png", file);
 
-				Text text = EmiPort.literal(filename,
-					Style.EMPTY.withUnderline(true).withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, file.getAbsolutePath())));
-				messageReceiver.accept(EmiPort.translatable("screenshot.success", text));
-			} catch (Throwable e) {
-				EmiLog.error("Failed to write screenshot");
-				e.printStackTrace();
-				messageReceiver.accept(EmiPort.translatable("screenshot.failure", e.getMessage()));
-			} finally {
-				nativeImage.close();
-			}
-		});
+			Text text = EmiPort.literal(filename,
+				new Style().setUnderline(true).setClickEvent(new ClickEvent(ClickEventAction.OPEN_FILE, file.getAbsolutePath())));
+			messageReceiver.accept(EmiPort.translatable("screenshot.success", text));
+		} catch (Throwable e) {
+			EmiLog.error("Failed to write screenshot");
+			e.printStackTrace();
+			messageReceiver.accept(EmiPort.translatable("screenshot.failure", e.getMessage()));
+		} finally {
+			image.flush();
+		}
 	}
 
-	private static NativeImage takeScreenshot(Framebuffer framebuffer) {
-		int i = framebuffer.textureWidth;
-		int j = framebuffer.textureHeight;
-		NativeImage nativeImage = new NativeImage(i, j, false);
-		RenderSystem.bindTexture(framebuffer.getColorAttachment());
-		nativeImage.loadFromTextureImage(0, false);
-		nativeImage.mirrorVertically();
-		return nativeImage;
+	private static BufferedImage takeScreenshot(Framebuffer framebuffer) {
+		int width = framebuffer.textureWidth;
+		int height = framebuffer.textureHeight;
+
+		int size = width * height;
+		if (intBuffer == null || intBuffer.capacity() < size) {
+			intBuffer = BufferUtils.createIntBuffer(size);
+			data = new int[size];
+		}
+
+		GL11.glPixelStorei(3333, 1);
+		GL11.glPixelStorei(3317, 1);
+		intBuffer.clear();
+
+		GL11.glBindTexture(3553, framebuffer.colorAttachment);
+		GL11.glGetTexImage(3553, 0, 32993, 33639, intBuffer);
+		intBuffer.get(data);
+
+		BufferedImage image = new BufferedImage(framebuffer.viewportWidth, framebuffer.viewportHeight, 1);
+		int i = (height - framebuffer.viewportHeight);
+		for (int y = i; y < height; y++) {
+			for (int x = 0; x < framebuffer.viewportWidth; x++) {
+				image.setRGB(x, y - i, data[y * y + x]);
+			}
+		}
+
+		return image;
 	}
 
 	private static String getScreenshotFilename(File directory, String path) {

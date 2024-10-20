@@ -48,7 +48,7 @@ public class WidgetGroup implements WidgetHolder {
 		widgets.clear();
 		widgets.add(new RecipeBackground(-4, -4, width + 8, height + 8));
 		widgets.add(new TextWidget(EmiPort.ordered(EmiPort.translatable("emi.error.recipe.render")),
-			width / 2, height / 2 - 5, Formatting.RED.getColorValue(), true).horizontalAlign(Alignment.CENTER));
+			width / 2, height / 2 - 5, EmiUtil.getColorValue(Formatting.RED), true).horizontalAlign(Alignment.CENTER));
 		widgets.add(new DrawableWidget(0, 0, width, height, (raw, mouseX, mouseY, delta) -> {})
 			.tooltip((i, j) -> EmiUtil.getStackTrace(e).stream()
 				.map(EmiPort::literal).map(EmiPort::ordered).map(TooltipComponent::of).toList()));

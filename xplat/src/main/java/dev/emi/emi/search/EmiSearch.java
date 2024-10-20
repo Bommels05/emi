@@ -1,6 +1,7 @@
 package dev.emi.emi.search;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -54,14 +55,14 @@ public class EmiSearch {
 				bakedStacks.add(stack);
 				Text name = NameQuery.getText(stack);
 				if (name != null) {
-					names.add(searchStack, name.getString().toLowerCase());
+					names.add(searchStack, name.asUnformattedString().toLowerCase());
 				}
 				List<Text> tooltip = stack.getTooltipText();
 				if (tooltip != null) {
 					for (int i = 1; i < tooltip.size(); i++) {
 						Text text = tooltip.get(i);
 						if (text != null) {
-							tooltips.add(searchStack, text.getString().toLowerCase());
+							tooltips.add(searchStack, text.asUnformattedString().toLowerCase());
 						}
 					}
 				}
@@ -72,8 +73,10 @@ public class EmiSearch {
 					names.add(searchStack, id.getPath().toLowerCase());
 				}
 				if (stack.getItemStack().getItem() == Items.ENCHANTED_BOOK) {
-					for (Enchantment e : EnchantmentHelper.get(stack.getItemStack()).keySet()) {
-						Identifier eid = EmiPort.getEnchantmentRegistry().getId(e);
+					for (Map.Entry<Integer, Integer> entry : ((Map<Integer, Integer>) EnchantmentHelper.get(stack.getItemStack())).entrySet()) {
+						Enchantment e = Enchantment.ALL_ENCHANTMENTS[entry.getKey()];
+						//todo check this
+						Identifier eid = new Identifier(e.getTranslationKey());
 						if (eid != null && !eid.getNamespace().equals("minecraft")) {
 							mods.add(searchStack, EmiUtil.getModName(eid.getNamespace()).toLowerCase());
 						}
@@ -87,7 +90,7 @@ public class EmiSearch {
 		for (Supplier<EmiAlias> supplier : EmiData.aliases) {
 			EmiAlias alias = supplier.get();
 			for (String key : alias.keys()) {
-				if (!I18n.hasTranslation(key)) {
+				if (!EmiUtil.hasTranslation(key)) {
 					EmiReloadLog.warn("Untranslated alias " + key);
 				}
 				String text = I18n.translate(key).toLowerCase();

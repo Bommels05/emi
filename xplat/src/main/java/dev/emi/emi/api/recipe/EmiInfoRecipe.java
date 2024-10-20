@@ -9,7 +9,6 @@ import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.WidgetHolder;
 import dev.emi.emi.runtime.EmiDrawContext;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -18,12 +17,12 @@ public class EmiInfoRecipe implements EmiRecipe {
 	private static final int PADDING = 4;
 	private static final MinecraftClient CLIENT = MinecraftClient.getInstance();
 	private final List<EmiIngredient> stacks;
-	private final List<OrderedText> text;
+	private final List<String> text;
 	private final Identifier id;
 
 	public EmiInfoRecipe(List<EmiIngredient> stacks, List<Text> text, @Nullable Identifier id) {
 		this.stacks = stacks;
-		this.text = text.stream().flatMap(t -> CLIENT.textRenderer.wrapLines(t, getDisplayWidth() - 4).stream()).toList();
+		this.text = text.stream().flatMap(t -> ((List<String>) CLIENT.textRenderer.wrapLines(t.asFormattedString(), getDisplayWidth() - 4)).stream()).toList();
 		this.id = id;
 	}
 
@@ -99,18 +98,18 @@ public class EmiInfoRecipe implements EmiRecipe {
 				if (l >= manager.lines.size()) {
 					return;
 				}
-				OrderedText text = manager.lines.get(l);
+				String text = manager.lines.get(l);
 				context.drawText(text, 0, y - y + i * CLIENT.textRenderer.fontHeight, 0);
 			}
 		});
 	}
 
 	private static class PageManager {
-		public final List<OrderedText> lines;
+		public final List<String> lines;
 		public final int pageSize;
 		public int currentPage;
 
-		public PageManager(List<OrderedText> lines, int pageSize) {
+		public PageManager(List<String> lines, int pageSize) {
 			this.lines = lines;
 			this.pageSize = pageSize;
 		}

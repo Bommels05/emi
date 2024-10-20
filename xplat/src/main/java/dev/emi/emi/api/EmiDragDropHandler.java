@@ -18,8 +18,8 @@ import dev.emi.emi.runtime.EmiDrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.inventory.slot.Slot;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
 
 public interface EmiDragDropHandler<T extends Screen> {
 	
@@ -79,7 +79,7 @@ public interface EmiDragDropHandler<T extends Screen> {
 	 * A simple, slot based drag drop handler.
 	 * Slots render a highlight while a stack is dragged.
 	 */
-	public static class SlotBased<T extends HandledScreen<?>> extends BoundsBased<T> {
+	public static class SlotBased<T extends HandledScreen> extends BoundsBased<T> {
 		
 		/**
 		 * @param slots A function to get a list of slot targets given a screen
@@ -97,10 +97,10 @@ public interface EmiDragDropHandler<T extends Screen> {
 			super(t -> SlotBased.<T>map(t, screen -> filter(screen, slotFilter), consumer));
 		}
 
-		private static <T extends HandledScreen<?>> Collection<Slot> filter(T t, BiPredicate<T, Slot> slotFilter) {
+		private static <T extends HandledScreen> Collection<Slot> filter(T t, BiPredicate<T, Slot> slotFilter) {
 			List<Slot> slots = Lists.newArrayList();
-			ScreenHandler handler = t.getScreenHandler();
-			for (Slot slot : handler.slots) {
+			ScreenHandler handler = t.screenHandler;
+			for (Slot slot : (List<Slot>) handler.slots) {
 				if (slotFilter.test(t, slot)) {
 					slots.add(slot);
 				}
@@ -108,7 +108,7 @@ public interface EmiDragDropHandler<T extends Screen> {
 			return slots;
 		}
 
-		private static <T extends HandledScreen<?>> Map<Bounds, Consumer<EmiIngredient>>
+		private static <T extends HandledScreen> Map<Bounds, Consumer<EmiIngredient>>
 				map(T t, Function<T, Collection<Slot>> slots, TriConsumer<T, Slot, EmiIngredient> consumer) {
 			Map<Bounds, Consumer<EmiIngredient>> map = Maps.newHashMap();
 			for (Slot slot : slots.apply(t)) {

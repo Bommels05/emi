@@ -9,26 +9,68 @@ architectury {
 
 loom {
 	accessWidenerPath = file("src/main/resources/emi.accesswidener")
+	intermediaryUrl = "https://repo.legacyfabric.net/repository/legacyfabric/net/legacyfabric/intermediary/%1\$s/intermediary-%1\$s-v2.jar"
 }
 
 dependencies {
 	minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
-	mappings "net.fabricmc:yarn:${rootProject.yarn_mappings}:v2"
+	mappings "net.legacyfabric:yarn:${rootProject.yarn_mappings}:v2"
 
+	implementation("com.github.LegacyModdingMC.UniMixins:unimixins-mixin-1.7.10:$rootProject.unimixins_version")
+	implementation "net.minecraft:forge-1.7.10-10.13.4.1614-1.7.10-minecraft-merged-ad790734f9:1.7.10-net.legacyfabric.yarn.1_7_10.1.7.10+build.551-v2-forge-1.7.10-10.13.4.1614-1.7.10"
 	modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
 
-	modCompileOnly("mezz.jei:${rootProject.jei_version}") {
+	/*modCompileOnly("mezz.jei:${rootProject.jei_version}") {
 		transitive = false
-	}
+	}*/
 }
 
 processResources {
-	inputs.property "version", project(":fabric").version
+	inputs.property "version", project(":forge").version
 
 	filesMatching("fabric.mod.json") {
-		expand "version": project(":fabric").version
+		expand "version": project(":forge").version
 	}
 }
+
+sourceSets {
+	main {
+		java {
+			srcDirs = ['build/tmp/processed-sources']
+		}
+	}
+}
+
+task processSources(type: Copy) {
+	from 'src/main/java'
+
+	into 'build/tmp/processed-sources'
+
+	outputs.upToDateWhen { false }
+
+	def regexesRaw = [
+			/(import) org\.objectweb\.asm(.*)/: '$1 org.spongepowered.asm.lib$2',
+			/(^|\s)record /: '$1@com.github.bsideup.jabel.Desugar record ',
+			/(^|\s|\()(List|Map|Set)\.(copyOf|of)\(/: '$1dev.emi.emi.backport.java.$2.$3(',
+			/(\s|\))\.toList\(\)/: '$1.collect(java.util.stream.Collectors.toList())',
+	]
+	def regexes = [:]
+	regexesRaw.each { k, v ->
+		regexes.put(java.util.regex.Pattern.compile(k), v)
+	}
+
+	filesMatching('**/*.java') {
+		filter { line ->
+			regexes.each { k, v ->
+				line = k.matcher(line).replaceAll(v)
+			}
+			return line
+		}
+	}
+}
+
+compileJava.dependsOn processSources
+sourcesJar.dependsOn processSources
 
 afterEvaluate {
 	configurations.default.extendsFrom = [configurations.namedElements]

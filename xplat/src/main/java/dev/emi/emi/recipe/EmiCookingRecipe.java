@@ -9,11 +9,8 @@ import dev.emi.emi.api.render.EmiTexture;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.WidgetHolder;
-import dev.emi.emi.config.FluidUnit;
+import dev.emi.emi.backport.CookingRecipe;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.item.Items;
-import net.minecraft.recipe.AbstractCookingRecipe;
 import net.minecraft.util.Identifier;
 
 public class EmiCookingRecipe implements EmiRecipe {
@@ -21,18 +18,15 @@ public class EmiCookingRecipe implements EmiRecipe {
 	private final EmiRecipeCategory category;
 	private final EmiIngredient input;
 	private final EmiStack output;
-	private final AbstractCookingRecipe recipe;
+	private final CookingRecipe recipe;
 	private final int fuelMultiplier;
 	private final boolean infiniBurn;
-	
-	public EmiCookingRecipe(AbstractCookingRecipe recipe, EmiRecipeCategory category, int fuelMultiplier, boolean infiniBurn) {
+
+	public EmiCookingRecipe(CookingRecipe recipe, EmiRecipeCategory category, int fuelMultiplier, boolean infiniBurn) {
 		this.id = EmiPort.getId(recipe);
 		this.category = category;
-		input = EmiIngredient.of(recipe.getIngredients().get(0));
-		output = EmiStack.of(EmiPort.getOutput(recipe));
-		if (input.getEmiStacks().get(0).getItemStack().isOf(Items.WET_SPONGE)) {
-			input.getEmiStacks().get(0).setRemainder(EmiStack.of(Fluids.WATER, FluidUnit.BUCKET));
-		}
+		input = recipe.getInput();
+		output = EmiStack.of(recipe.getOutput());
 		this.recipe = recipe;
 		this.fuelMultiplier = fuelMultiplier;
 		this.infiniBurn = infiniBurn;
@@ -70,8 +64,8 @@ public class EmiCookingRecipe implements EmiRecipe {
 
 	@Override
 	public void addWidgets(WidgetHolder widgets) {
-		widgets.addFillingArrow(24, 5, 50 * recipe.getCookTime()).tooltip((mx, my) -> {
-			return List.of(TooltipComponent.of(EmiPort.ordered(EmiPort.translatable("emi.cooking.time", recipe.getCookTime() / 20f))));
+		widgets.addFillingArrow(24, 5, 50 * 200).tooltip((mx, my) -> {
+			return List.of(TooltipComponent.of(EmiPort.ordered(EmiPort.translatable("emi.cooking.time", 200 / 20f))));
 		});
 		if (infiniBurn) {
 			widgets.addTexture(EmiTexture.FULL_FLAME, 1, 24);

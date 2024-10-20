@@ -2,6 +2,7 @@ package dev.emi.emi.api;
 
 import java.util.List;
 
+import net.minecraft.inventory.slot.Slot;
 import org.jetbrains.annotations.Nullable;
 
 import dev.emi.emi.EmiPort;
@@ -15,7 +16,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 
 /**
@@ -31,8 +31,8 @@ public interface EmiRecipeHandler<T extends ScreenHandler> extends StandardRecip
 	 */
 	List<Slot> getInputSources(T handler);
 
-	default List<Slot> getInputSources(HandledScreen<T> screen) {
-		return getInputSources(screen.getScreenHandler());
+	default List<Slot> getInputSources(HandledScreen screen) {
+		return getInputSources((T) screen.screenHandler);
 	}
 
 	/**
@@ -40,22 +40,22 @@ public interface EmiRecipeHandler<T extends ScreenHandler> extends StandardRecip
 	 */
 	List<Slot> getCraftingSlots(T handler);
 
-	default List<Slot> getCraftingSlots(HandledScreen<T> screen) {
-		return getCraftingSlots(screen.getScreenHandler());
+	default List<Slot> getCraftingSlots(HandledScreen screen) {
+		return getCraftingSlots((T) screen.screenHandler);
 	}
 
 	/**
 	 * @return The slots where inputs should be placed to perform crafting for a particular context.
 	 */
-	default List<Slot> getCraftingSlots(EmiRecipe recipe, HandledScreen<T> screen) {
-		return getCraftingSlots(screen.getScreenHandler());
+	default List<Slot> getCraftingSlots(EmiRecipe recipe, HandledScreen screen) {
+		return getCraftingSlots((T) screen.screenHandler);
 	}
 	
 	@SuppressWarnings("unchecked")
 	default List<Slot> getCraftingSlots(EmiRecipe recipe, T handler) {
-		HandledScreen<?> hs = EmiApi.getHandledScreen();
-		if (hs != null && hs.getScreenHandler() == handler) {
-			return getCraftingSlots(recipe, (HandledScreen<T>) hs);
+		HandledScreen hs = EmiApi.getHandledScreen();
+		if (hs != null && hs.screenHandler == handler) {
+			return getCraftingSlots(recipe, hs);
 		}
 		return List.of();
 	}
@@ -91,15 +91,15 @@ public interface EmiRecipeHandler<T extends ScreenHandler> extends StandardRecip
 		return canCraft(recipe, context.getInventory(), context.getScreen());
 	}
 
-	default boolean canCraft(EmiRecipe recipe, EmiPlayerInventory inventory, HandledScreen<T> screen) {
+	default boolean canCraft(EmiRecipe recipe, EmiPlayerInventory inventory, HandledScreen screen) {
 		return inventory.canCraft(recipe);
 	}
 
-	default Text getInvalidReason(EmiRecipe recipe, EmiPlayerInventory inventory, HandledScreen<T> screen) {
+	default Text getInvalidReason(EmiRecipe recipe, EmiPlayerInventory inventory, HandledScreen screen) {
 		return NOT_ENOUGH_INGREDIENTS;
 	}
 
-	default boolean performFill(EmiRecipe recipe, HandledScreen<T> screen, EmiFillAction action, int amount) {
+	default boolean performFill(EmiRecipe recipe, HandledScreen screen, EmiFillAction action, int amount) {
 		List<ItemStack> stacks = EmiRecipeFiller.getStacks(this, recipe, screen, amount);
 		if (stacks != null) {
 			stacks = mutateFill(recipe, screen, stacks);
@@ -112,7 +112,7 @@ public interface EmiRecipeHandler<T extends ScreenHandler> extends StandardRecip
 						case CURSOR -> EmiCraftContext.Destination.CURSOR;
 					});
 				} else {
-					EmiClient.sendFillRecipe(this, screen, screen.getScreenHandler().syncId, action.id, stacks, recipe);
+					EmiClient.sendFillRecipe(this, screen, screen.screenHandler.syncId, action.id, stacks, recipe);
 				}
 				return true;
 			}
@@ -130,7 +130,7 @@ public interface EmiRecipeHandler<T extends ScreenHandler> extends StandardRecip
 	}
 
 	@Deprecated
-	default List<ItemStack> mutateFill(EmiRecipe recipe, HandledScreen<T> screen, List<ItemStack> stacks) {
+	default List<ItemStack> mutateFill(EmiRecipe recipe, HandledScreen screen, List<ItemStack> stacks) {
 		return stacks;
 	}
 }

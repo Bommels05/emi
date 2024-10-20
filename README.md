@@ -1,6 +1,11 @@
 # EMI
 EMI is a featureful and accessible item and recipe viewer for Minecraft.
 
+## 1.7.10
+The Port to 1.7.10 is currently not finished but most things should already work and a NEI Integration is planned.
+The Shims (net/minecraft/..., GLFW, Blaze3D and partially emi.backport) and a bit of the buildscript are from [retroEmi](https://git.sleeping.town/Rewind/retroEMI).
+Building is also currently not possible because it uses a custom version of architectury loom, but I will move to GTNH RFG if I get it working with yarn mappings.
+
 ![EMI Interface](https://user-images.githubusercontent.com/14813658/224562247-1588064e-39ef-475a-9108-d7a357af6939.png)
 
 ![Recipe Tree](https://user-images.githubusercontent.com/14813658/224562258-1a5ee67a-fd7f-489f-9eed-ae67c184ddac.png)

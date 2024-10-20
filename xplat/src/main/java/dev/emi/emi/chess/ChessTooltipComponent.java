@@ -23,7 +23,7 @@ class ChessTooltipComponent implements EmiTooltipComponent {
 
 	@Override
 	public int getWidth(TextRenderer textRenderer) {
-		return Math.max(textRenderer.getWidth(description), 48);
+		return Math.max(textRenderer.getStringWidth(description.asUnformattedString()), 48);
 	}
 
 	@Override

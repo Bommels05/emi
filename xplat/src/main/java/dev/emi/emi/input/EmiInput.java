@@ -16,17 +16,17 @@ public class EmiInput {
 	}
 
 	public static boolean isAltDown() {
-		return InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_LEFT_ALT)
-			|| InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_RIGHT_ALT);
+		return InputUtil.isKeyPressed(GLFW.GLFW_KEY_LEFT_ALT)
+			|| InputUtil.isKeyPressed(GLFW.GLFW_KEY_RIGHT_ALT);
 	}
 
 	public static boolean isShiftDown() {
-		return InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_LEFT_SHIFT)
-			|| InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_KEY_RIGHT_SHIFT);
+		return InputUtil.isKeyPressed(GLFW.GLFW_KEY_LEFT_SHIFT)
+			|| InputUtil.isKeyPressed(GLFW.GLFW_KEY_RIGHT_SHIFT);
 	}
 
 	public static int maskFromCode(int keyCode) {
-		if (MinecraftClient.IS_SYSTEM_MAC) {
+		if (MinecraftClient.IS_MAC) {
 			if (keyCode == GLFW.GLFW_KEY_LEFT_SUPER || keyCode == GLFW.GLFW_KEY_RIGHT_SUPER) {
 				return CONTROL_MASK;
 			}

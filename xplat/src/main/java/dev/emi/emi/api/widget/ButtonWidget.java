@@ -5,11 +5,11 @@ import java.util.function.BooleanSupplier;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.emi.emi.EmiRenderHelper;
+import dev.emi.emi.EmiUtil;
 import dev.emi.emi.runtime.EmiDrawContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 
 public class ButtonWidget extends Widget {
@@ -56,7 +56,7 @@ public class ButtonWidget extends Widget {
 	@Override
 	public boolean mouseClicked(int mouseX, int mouseY, int button) {
 		action.click(mouseX, mouseY, button);
-		MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.master(SoundEvents.UI_BUTTON_CLICK, 1.0f));
+		MinecraftClient.getInstance().getSoundManager().play(PositionedSoundInstance.master(EmiUtil.UI_BUTTON_CLICK, 1.0f));
 		return true;
 	}
 

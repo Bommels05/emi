@@ -3,7 +3,7 @@ package dev.emi.emi.api.widget;
 import dev.emi.emi.runtime.EmiDrawContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.OrderedText;
+import dev.emi.emi.backport.OrderedText;
 
 public class TextWidget extends Widget {
 	private static final MinecraftClient CLIENT = MinecraftClient.getInstance();
@@ -34,7 +34,7 @@ public class TextWidget extends Widget {
 
 	@Override
 	public Bounds getBounds() {
-		int width = CLIENT.textRenderer.getWidth(text);
+		int width = CLIENT.textRenderer.getStringWidth(text.asText().asUnformattedString());
 		int xOff = horizontalAlignment.offset(width);
 		int yOff = verticalAlignment.offset(CLIENT.textRenderer.fontHeight);
 		return new Bounds(x + xOff, y + yOff, width, CLIENT.textRenderer.fontHeight);
@@ -44,7 +44,7 @@ public class TextWidget extends Widget {
 	public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
 		EmiDrawContext context = EmiDrawContext.wrap(matrices);
 		context.push();
-		int xOff = horizontalAlignment.offset(CLIENT.textRenderer.getWidth(text));
+		int xOff = horizontalAlignment.offset(CLIENT.textRenderer.getStringWidth(text.asText().asUnformattedString()));
 		int yOff = verticalAlignment.offset(CLIENT.textRenderer.fontHeight);
 		context.matrices().translate(xOff, yOff, 300);
 		if (shadow) {

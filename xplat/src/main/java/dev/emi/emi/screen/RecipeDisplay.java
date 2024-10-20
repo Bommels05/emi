@@ -85,7 +85,7 @@ public class RecipeDisplay {
 				t.printStackTrace();
 				widgets = new WidgetGroup(recipe, wx, wy, wWidth, wHeight);
 				widgets.add(new TextWidget(EmiPort.ordered(EmiPort.translatable("emi.error.recipe.render")),
-					wWidth / 2, wHeight / 2 - 5, Formatting.RED.getColorValue(), true).horizontalAlign(Alignment.CENTER));
+					wWidth / 2, wHeight / 2 - 5, EmiUtil.getColorValue(Formatting.RED), true).horizontalAlign(Alignment.CENTER));
 				if (exception != null) {
 					List<Text> text = EmiUtil.getStackTrace(exception).stream().map(s -> (Text) EmiPort.literal(s)).toList();
 					widgets.addTooltipText(text, 0, 0, wWidth, wHeight);
@@ -93,7 +93,7 @@ public class RecipeDisplay {
 			}
 		} else {
 			widgets.add(new TextWidget(EmiPort.ordered(EmiPort.translatable("emi.error.recipe.initialize")),
-				wWidth / 2, wHeight / 2 - 5, Formatting.RED.getColorValue(), true).horizontalAlign(Alignment.CENTER));
+				wWidth / 2, wHeight / 2 - 5, EmiUtil.getColorValue(Formatting.RED), true).horizontalAlign(Alignment.CENTER));
 			if (exception != null) {
 				List<Text> text = EmiUtil.getStackTrace(exception).stream().map(s -> (Text) EmiPort.literal(s)).toList();
 				widgets.addTooltipText(text, 0, 0, wWidth, wHeight);

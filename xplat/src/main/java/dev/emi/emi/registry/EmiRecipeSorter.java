@@ -1,5 +1,6 @@
 package dev.emi.emi.registry;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -7,15 +8,13 @@ import com.google.common.collect.Maps;
 
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.stack.EmiIngredient;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
 
 public class EmiRecipeSorter {
-	private static Map<EmiRecipe, IntList> inputCache = Maps.newIdentityHashMap();
-	private static Map<EmiRecipe, IntList> outputCache = Maps.newIdentityHashMap();
+	private static Map<EmiRecipe, List<Integer>> inputCache = Maps.newIdentityHashMap();
+	private static Map<EmiRecipe, List<Integer>> outputCache = Maps.newIdentityHashMap();
 
-	public static IntList getInput(EmiRecipe recipe) {
-		IntList list = inputCache.get(recipe);
+	public static List<Integer> getInput(EmiRecipe recipe) {
+		List<Integer> list = inputCache.get(recipe);
 		if (list == null) {
 			list = bakedList(recipe.getInputs());
 			inputCache.put(recipe, list);
@@ -23,8 +22,8 @@ public class EmiRecipeSorter {
 		return list;
 	}
 
-	public static IntList getOutput(EmiRecipe recipe) {
-		IntList list = outputCache.get(recipe);
+	public static List<Integer> getOutput(EmiRecipe recipe) {
+		List<Integer> list = outputCache.get(recipe);
 		if (list == null) {
 			list = bakedList(recipe.getOutputs());
 			outputCache.put(recipe, list);
@@ -37,8 +36,8 @@ public class EmiRecipeSorter {
 		outputCache.clear();
 	}
 
-	private static IntList bakedList(List<? extends EmiIngredient> stacks) {
-		IntList list = new IntArrayList(stacks.size());
+	private static List<Integer> bakedList(List<? extends EmiIngredient> stacks) {
+		List<Integer> list = new ArrayList<>(stacks.size());
 		for (EmiIngredient stack : stacks) {
 			if (stack.isEmpty()) {
 				continue;

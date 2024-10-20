@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
+import com.mojang.blaze3d.platform.GLX;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.emi.emi.EmiPort;
@@ -17,25 +17,19 @@ import net.minecraft.client.gui.AbstractParentElement;
 import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.Selectable;
-import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.screen.narration.NarrationPart;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.Text;
 import net.minecraft.util.math.MathHelper;
+import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.GL11;
 
 /**
  * Shamelessly modified vanilla lists to support variable width.
  * This is the lesser of two evils, at least this way I have vanilla compat.
  */
-public class ListWidget extends AbstractParentElement implements Drawable, Selectable {
+public class ListWidget extends AbstractParentElement implements Drawable {
 	protected final MinecraftClient client;
 	private final List<Entry> children = Lists.newArrayList();
 	protected int width;
@@ -158,32 +152,25 @@ public class ListWidget extends AbstractParentElement implements Drawable, Selec
 		int m;
 		int i = this.getScrollbarPositionX();
 		int j = i + 6;
-		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder bufferBuilder = tessellator.getBuffer();
-		RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+		GL11.glDisable(2896);
+		GL11.glDisable(2912);
+		Tessellator tessellator = Tessellator.INSTANCE;
 		this.hoveredEntry = this.isMouseOver(mouseX, mouseY) ? this.getEntryAtPosition(mouseX, mouseY) : null;
 
 		{	// Render background
 			RenderSystem.setShaderTexture(0, DrawableHelper.OPTIONS_BACKGROUND_TEXTURE);
 			RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-			bufferBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-			bufferBuilder.vertex((double)this.left, (double)this.bottom, 0.0)
-				.texture((float)this.left / 32.0F, (float)(this.bottom + (int)this.getScrollAmount()) / 32.0F)
-				.color(32, 32, 32, 255)
-				.next();
-			bufferBuilder.vertex((double)this.right, (double)this.bottom, 0.0)
-				.texture((float)this.right / 32.0F, (float)(this.bottom + (int)this.getScrollAmount()) / 32.0F)
-				.color(32, 32, 32, 255)
-				.next();
-			bufferBuilder.vertex((double)this.right, (double)this.top, 0.0)
-				.texture((float)this.right / 32.0F, (float)(this.top + (int)this.getScrollAmount()) / 32.0F)
-				.color(32, 32, 32, 255)
-				.next();
-			bufferBuilder.vertex((double)this.left, (double)this.top, 0.0)
-				.texture((float)this.left / 32.0F, (float)(this.top + (int)this.getScrollAmount()) / 32.0F)
-				.color(32, 32, 32, 255)
-				.next();
-			tessellator.draw();
+			tessellator.begin();
+			tessellator.color(32, 32, 32, 255);
+			tessellator.texture((float)this.left / 32.0F, (float)(this.bottom + (int)this.getScrollAmount()) / 32.0F);
+			tessellator.vertex((double)this.left, (double)this.bottom, 0.0);
+			tessellator.texture((float)this.right / 32.0F, (float)(this.bottom + (int)this.getScrollAmount()) / 32.0F);
+			tessellator.vertex((double)this.right, (double)this.bottom, 0.0);
+			tessellator.texture((float)this.right / 32.0F, (float)(this.top + (int)this.getScrollAmount()) / 32.0F);
+			tessellator.vertex((double)this.right, (double)this.top, 0.0);
+			tessellator.texture((float)this.left / 32.0F, (float)(this.top + (int)this.getScrollAmount()) / 32.0F);
+			tessellator.vertex((double)this.left, (double)this.top, 0.0);
+			tessellator.end();
 		}
 		
 		int k = this.getRowLeft();
@@ -191,73 +178,95 @@ public class ListWidget extends AbstractParentElement implements Drawable, Selec
 		this.renderList(matrices, k, l, mouseX, mouseY, delta);
 
 
+		GL11.glDisable(2929);
+		GL11.glEnable(3042);
+		GLX.glBlendFuncSeparate(770, 771, 0, 1);
+		GL11.glDisable(3008);
+		GL11.glShadeModel(7425);
+		GL11.glDisable(3553);
 		{	// Render horizontal shadows
-			RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
 			RenderSystem.setShaderTexture(0, DrawableHelper.OPTIONS_BACKGROUND_TEXTURE);
 			RenderSystem.enableDepthTest();
-			RenderSystem.depthFunc(519);
-			bufferBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-			bufferBuilder.vertex((double)this.left, (double)this.top, -100.0).texture(0.0F, (float)this.top / 32.0F).color(64, 64, 64, 255).next();
-			bufferBuilder.vertex((double)(this.left + this.width), (double)this.top, -100.0)
-				.texture((float)this.width / 32.0F, (float)this.top / 32.0F)
-				.color(64, 64, 64, 255)
-				.next();
-			bufferBuilder.vertex((double)(this.left + this.width), 0.0, -100.0).texture((float)this.width / 32.0F, 0.0F).color(64, 64, 64, 255).next();
-			bufferBuilder.vertex((double)this.left, 0.0, -100.0).texture(0.0F, 0.0F).color(64, 64, 64, 255).next();
-			bufferBuilder.vertex((double)this.left, (double)this.height, -100.0).texture(0.0F, (float)this.height / 32.0F).color(64, 64, 64, 255).next();
-			bufferBuilder.vertex((double)(this.left + this.width), (double)this.height, -100.0)
-				.texture((float)this.width / 32.0F, (float)this.height / 32.0F)
-				.color(64, 64, 64, 255)
-				.next();
-			bufferBuilder.vertex((double)(this.left + this.width), (double)this.bottom, -100.0)
-				.texture((float)this.width / 32.0F, (float)this.bottom / 32.0F)
-				.color(64, 64, 64, 255)
-				.next();
-			bufferBuilder.vertex((double)this.left, (double)this.bottom, -100.0).texture(0.0F, (float)this.bottom / 32.0F).color(64, 64, 64, 255).next();
-			tessellator.draw();
-			RenderSystem.depthFunc(515);
+			//RenderSystem.depthFunc(519);
+			tessellator.begin();
+			tessellator.color(64, 64, 64, 255);
+			tessellator.texture(0.0F, (float)this.top / 32.0F);
+			tessellator.vertex((double)this.left, (double)this.top, -100.0);
+			tessellator.texture((float)this.width / 32.0F, (float)this.top / 32.0F);
+			tessellator.vertex((double)(this.left + this.width), (double)this.top, -100.0);
+			tessellator.texture((float)this.width / 32.0F, 0.0F);
+			tessellator.vertex((double)(this.left + this.width), 0.0, -100.0);
+			tessellator.texture(0.0F, 0.0F);
+			tessellator.vertex((double)this.left, 0.0, -100.0);
+			tessellator.texture(0.0F, (float)this.height / 32.0F);
+			tessellator.vertex((double)this.left, (double)this.height, -100.0);
+			tessellator.texture((float)this.width / 32.0F, (float)this.height / 32.0F);
+			tessellator.vertex((double)(this.left + this.width), (double)this.height, -100.0);
+			tessellator.texture((float)this.width / 32.0F, (float)this.bottom / 32.0F);
+			tessellator.vertex((double)(this.left + this.width), (double)this.bottom, -100.0);
+			tessellator.texture(0.0F, (float)this.bottom / 32.0F);
+			tessellator.vertex((double)this.left, (double)this.bottom, -100.0);
+			tessellator.end();
+			//RenderSystem.depthFunc(515);
 			RenderSystem.disableDepthTest();
 			RenderSystem.enableBlend();
-			RenderSystem.blendFuncSeparate(
+			/*RenderSystem.blendFuncSeparate(
 				GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SrcFactor.ZERO, GlStateManager.DstFactor.ONE
-			);
-			RenderSystem.setShader(GameRenderer::getPositionColorShader);
+			);*/
+			GLX.glBlendFuncSeparate(770, 771, 0, 1);
+			//RenderSystem.setShader(GameRenderer::getPositionColorShader);
 			n = 4;
-			bufferBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
-			bufferBuilder.vertex((double)this.left, (double)(this.top + 4), 0.0).color(0, 0, 0, 0).next();
-			bufferBuilder.vertex((double)this.right, (double)(this.top + 4), 0.0).color(0, 0, 0, 0).next();
-			bufferBuilder.vertex((double)this.right, (double)this.top, 0.0).color(0, 0, 0, 255).next();
-			bufferBuilder.vertex((double)this.left, (double)this.top, 0.0).color(0, 0, 0, 255).next();
-			bufferBuilder.vertex((double)this.left, (double)this.bottom, 0.0).color(0, 0, 0, 255).next();
-			bufferBuilder.vertex((double)this.right, (double)this.bottom, 0.0).color(0, 0, 0, 255).next();
-			bufferBuilder.vertex((double)this.right, (double)(this.bottom - 4), 0.0).color(0, 0, 0, 0).next();
-			bufferBuilder.vertex((double)this.left, (double)(this.bottom - 4), 0.0).color(0, 0, 0, 0).next();
-			tessellator.draw();
+			tessellator.begin();
+			tessellator.color(0, 0, 0, 0);
+			tessellator.vertex((double)this.left, (double)(this.top + 4), 0.0);
+			tessellator.vertex((double)this.right, (double)(this.top + 4), 0.0);
+			tessellator.color(0, 0, 0, 255);
+			tessellator.vertex((double)this.right, (double)this.top, 0.0);
+			tessellator.vertex((double)this.left, (double)this.top, 0.0);
+			tessellator.end();
+			tessellator.begin();
+			tessellator.color(0, 0, 0, 255);
+			tessellator.vertex((double)this.left, (double)this.bottom, 0.0);
+			tessellator.vertex((double)this.right, (double)this.bottom, 0.0);
+			tessellator.color(0, 0, 0, 0);
+			tessellator.vertex((double)this.right, (double)(this.bottom - 4), 0.0);
+			tessellator.vertex((double)this.left, (double)(this.bottom - 4), 0.0);
+			tessellator.end();
 		}
 
 		if ((o = this.getMaxScroll()) > 0) {
-			RenderSystem.setShader(GameRenderer::getPositionColorShader);
+			//RenderSystem.setShader(GameRenderer::getPositionColorShader);
 			m = (int)((float)((this.bottom - this.top) * (this.bottom - this.top)) / (float)this.getMaxPosition());
 			m = MathHelper.clamp(m, 32, this.bottom - this.top - 8);
 			n = (int)this.getScrollAmount() * (this.bottom - this.top - m) / o + this.top;
 			if (n < this.top) {
 				n = this.top;
 			}
-			bufferBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
-			bufferBuilder.vertex(i, this.bottom, 0.0).color(0, 0, 0, 255).next();
-			bufferBuilder.vertex(j, this.bottom, 0.0).color(0, 0, 0, 255).next();
-			bufferBuilder.vertex(j, this.top, 0.0).color(0, 0, 0, 255).next();
-			bufferBuilder.vertex(i, this.top, 0.0).color(0, 0, 0, 255).next();
-			bufferBuilder.vertex(i, n + m, 0.0).color(128, 128, 128, 255).next();
-			bufferBuilder.vertex(j, n + m, 0.0).color(128, 128, 128, 255).next();
-			bufferBuilder.vertex(j, n, 0.0).color(128, 128, 128, 255).next();
-			bufferBuilder.vertex(i, n, 0.0).color(128, 128, 128, 255).next();
-			bufferBuilder.vertex(i, n + m - 1, 0.0).color(192, 192, 192, 255).next();
-			bufferBuilder.vertex(j - 1, n + m - 1, 0.0).color(192, 192, 192, 255).next();
-			bufferBuilder.vertex(j - 1, n, 0.0).color(192, 192, 192, 255).next();
-			bufferBuilder.vertex(i, n, 0.0).color(192, 192, 192, 255).next();
-			tessellator.draw();
+			tessellator.begin();
+			tessellator.color(0, 0, 0, 255);
+			tessellator.vertex(i, this.bottom, 0.0);
+			tessellator.vertex(j, this.bottom, 0.0);
+			tessellator.vertex(j, this.top, 0.0);
+			tessellator.vertex(i, this.top, 0.0);
+			tessellator.end();
+			tessellator.begin();
+			tessellator.color(128, 128, 128, 255);
+			tessellator.vertex(i, n + m, 0.0);
+			tessellator.vertex(j, n + m, 0.0);
+			tessellator.vertex(j, n, 0.0);
+			tessellator.vertex(i, n, 0.0);
+			tessellator.end();
+			tessellator.begin();
+			tessellator.color(192, 192, 192, 255);
+			tessellator.vertex(i, n + m - 1, 0.0);
+			tessellator.vertex(j - 1, n + m - 1, 0.0);
+			tessellator.vertex(j - 1, n, 0.0);
+			tessellator.vertex(i, n, 0.0);
+			tessellator.end();
 		}
+		GL11.glEnable(3553);
+		GL11.glShadeModel(7424);
+		GL11.glEnable(3008);
 		RenderSystem.disableBlend();
 	}
 
@@ -394,8 +403,8 @@ public class ListWidget extends AbstractParentElement implements Drawable, Selec
 	}
 
 	@Override
-	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (super.keyPressed(keyCode, scanCode, modifiers)) {
+	public boolean keyPressed(char c, int keyCode) {
+		if (super.keyPressed(c, keyCode)) {
 			return true;
 		}
 		/*
@@ -451,8 +460,7 @@ public class ListWidget extends AbstractParentElement implements Drawable, Selec
 
 	protected void renderList(MatrixStack matrices, int x, int y, int mouseX, int mouseY, float delta) {
 		int i = this.getEntryCount();
-		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder bufferBuilder = tessellator.getBuffer();
+		Tessellator tessellator = Tessellator.INSTANCE;
 		for (int j = 0; j < i; ++j) {
 			int p;
 			int k = this.getRowTop(j);
@@ -469,22 +477,22 @@ public class ListWidget extends AbstractParentElement implements Drawable, Selec
 			if (this.renderSelection && this.isSelectedEntry(j)) {
 				p = this.left + this.width / 2 - o / 2;
 				int q = this.left + this.width / 2 + o / 2;
-				RenderSystem.setShader(GameRenderer::getPositionShader);
+				//RenderSystem.setShader(GameRenderer::getPositionShader);
 				float f = this.isFocused() ? 1.0f : 0.5f;
 				RenderSystem.setShaderColor(f, f, f, 1.0f);
-				bufferBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION);
-				bufferBuilder.vertex(p, m + n + 2, 0.0).next();
-				bufferBuilder.vertex(q, m + n + 2, 0.0).next();
-				bufferBuilder.vertex(q, m - 2, 0.0).next();
-				bufferBuilder.vertex(p, m - 2, 0.0).next();
-				tessellator.draw();
+				tessellator.begin();
+				tessellator.vertex(p, m + n + 2, 0.0);
+				tessellator.vertex(q, m + n + 2, 0.0);
+				tessellator.vertex(q, m - 2, 0.0);
+				tessellator.vertex(p, m - 2, 0.0);
+				tessellator.end();
 				RenderSystem.setShaderColor(0.0f, 0.0f, 0.0f, 1.0f);
-				bufferBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION);
-				bufferBuilder.vertex(p + 1, m + n + 1, 0.0).next();
-				bufferBuilder.vertex(q - 1, m + n + 1, 0.0).next();
-				bufferBuilder.vertex(q - 1, m - 1, 0.0).next();
-				bufferBuilder.vertex(p + 1, m - 1, 0.0).next();
-				tessellator.draw();
+				tessellator.begin();
+				tessellator.vertex(p + 1, m + n + 1, 0.0);
+				tessellator.vertex(q - 1, m + n + 1, 0.0);
+				tessellator.vertex(q - 1, m - 1, 0.0);
+				tessellator.vertex(p + 1, m - 1, 0.0);
+				tessellator.end();
 			}
 			p = this.getRowLeft();
 			((Entry)entry).render(matrices, j, k, p, o - 3, n, mouseX, mouseY, Objects.equals(this.hoveredEntry, entry), delta);
@@ -527,17 +535,6 @@ public class ListWidget extends AbstractParentElement implements Drawable, Selec
 		return false;
 	}
 
-	@Override
-	public Selectable.SelectionType getType() {
-		if (this.isFocused()) {
-			return Selectable.SelectionType.FOCUSED;
-		}
-		if (this.hoveredEntry != null) {
-			return Selectable.SelectionType.HOVERED;
-		}
-		return Selectable.SelectionType.NONE;
-	}
-
 	@Nullable
 	public Entry getHoveredEntry() {
 		return this.hoveredEntry;
@@ -545,14 +542,6 @@ public class ListWidget extends AbstractParentElement implements Drawable, Selec
 
 	void setEntryParentList(Entry entry) {
 		entry.parentList = this;
-	}
-
-	protected void appendNarrations(NarrationMessageBuilder builder, Entry entry) {
-		int i;
-		List<Entry> list = this.children();
-		if (list.size() > 1 && (i = list.indexOf(entry)) != -1) {
-			builder.put(NarrationPart.POSITION, (Text)EmiPort.translatable("narrator.position.list", i + 1, list.size()));
-		}
 	}
 
 	public int getTotalHeight() {
@@ -566,8 +555,12 @@ public class ListWidget extends AbstractParentElement implements Drawable, Selec
 		return height;
 	}
 
-	@Override
-	public void appendNarrations(NarrationMessageBuilder var1) {
+	public int getTop() {
+		return top;
+	}
+
+	public int getBottom() {
+		return bottom;
 	}
 
 	public static abstract class Entry extends AbstractParentElement {

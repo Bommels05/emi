@@ -752,5 +752,26 @@
   "tag.item.fabric.shovels": "Shovels",
   "tag.item.fabric.hoes": "Hoes",
   "tag.item.fabric.swords": "Swords",
-  "tag.item.fabric.shears": "Shears"
+  "tag.item.fabric.shears": "Shears",
+
+  "tag.item.c.tree.sapling": "Saplings",
+  "tag.item.c.tree.leaves": "Leaves",
+  "tag.item.c.stick.wood": "Wooden Sticks",
+  "tag.item.c.stair.wood": "Wooden Stairs",
+  "tag.item.c.plank.wood": "Wooden Planks",
+  "tag.item.c.log.wood": "Logs",
+  "tag.item.c.ingot.brick.nether": "Nether Bricks",
+  "tag.item.c.glowstone": "Glowstones",
+  "tag.item.c.dye.light.gray": "Light Gray Dyes",
+  "tag.item.c.dye.light.blue": "Light Blue Dyes",
+  "tag.item.c.pane.glass.light.gray": "Light Gray Glass Panes",
+  "tag.item.c.pane.glass.light.blue": "Light Blue Glass Panes",
+  "tag.item.c.block.glass.light.gray": "Light Gray Glass",
+  "tag.item.c.block.glass.light.blue": "Light Blue Glass",
+  "tag.item.c.block.redstone": "Redstone Blocks",
+  "tag.item.c.block.lapis": "Lapis Blocks",
+  "tag.item.c.block.coal": "Coal Blocks",
+  "tag.item.c.block.diamond": "Diamond Blocks",
+  "tag.item.c.block.emerald": "Emerald Blocks",
+  "tag.item.c.records": "Music Discs"
 }

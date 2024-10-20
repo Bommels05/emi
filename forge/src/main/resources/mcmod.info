@@ -1,0 +1,9 @@
+[{
+  "modid": "emi",
+  "name": "EMI",
+  "version": "${version}",
+  "mcversion": "1.7.10",
+  "description": "A featureful and accessible item and recipe viewer",
+  "logoFile": "icon.png",
+  "authorList": [ "Emi" ]
+}]

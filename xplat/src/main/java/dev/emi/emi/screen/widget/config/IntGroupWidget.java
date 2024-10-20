@@ -21,19 +21,17 @@ public class IntGroupWidget extends ConfigEntryWidget {
 		this.edits = Lists.newArrayList();
 		this.group = mutator.get();
 		int width = getWidth();
-		List<Element> children = Lists.newArrayList();
 		for (int i = 0; i < group.size; i++) {
 			final int f = i;
-			IntEdit edit = new IntEdit(width, () -> group.values.getInt(f), v -> {
+			IntEdit edit = new IntEdit(width, () -> group.values.get(f), v -> {
 				group.values.set(f, v);
 				mutator.set(group);
-			});
+			}, buttonManager);
 			edits.add(edit);
-			children.add(edit.text);
-			children.add(edit.up);
-			children.add(edit.down);
+			textFields.add(edit.text);
+			buttons.add(edit.up);
+			buttons.add(edit.down);
 		}
-		this.setChildren(children);
 	}
 
 	public int getSpacing() {

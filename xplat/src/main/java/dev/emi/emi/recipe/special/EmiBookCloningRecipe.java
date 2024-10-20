@@ -78,15 +78,14 @@ public class EmiBookCloningRecipe extends EmiPatternCraftingRecipe {
 		if (title.length() > 0) {
 			title = Character.toUpperCase(title.charAt(0)) + title.substring(1, title.length());
 		}
-		tag.putString(WrittenBookItem.TITLE_KEY, title);
+		tag.putString("title", title);
 		String author;
 		if (random.nextInt(20) < 5) {
 			author = MOD_AUTHORS.get(random.nextInt(MOD_AUTHORS.size()));
 		} else {
 			author = AUTHORS.get(random.nextInt(AUTHORS.size()));
 		}
-		tag.putString(WrittenBookItem.AUTHOR_KEY, author);
-		tag.putInt(WrittenBookItem.GENERATION_KEY, (copy ? 1 : 0) + random.nextInt(2));
+		tag.putString("author", author);
 		tag.put("pages", new NbtList());
 		stack.setNbt(tag);
 		return EmiStack.of(stack);

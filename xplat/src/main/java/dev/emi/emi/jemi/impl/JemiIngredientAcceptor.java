@@ -1,6 +1,6 @@
 package dev.emi.emi.jemi.impl;
 
-import java.util.List;
+/*import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -117,4 +117,4 @@ public class JemiIngredientAcceptor implements IIngredientAcceptor<JemiIngredien
 		addStack(EmiStack.of(fluid, tag, amount));
 		return this;
 	}
-}
+}*/

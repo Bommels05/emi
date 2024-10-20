@@ -3,6 +3,9 @@ package dev.emi.emi.network;
 import java.util.List;
 import java.util.function.Consumer;
 
+import dev.emi.emi.EmiUtil;
+import net.minecraft.inventory.slot.Slot;
+import net.minecraft.util.PacketByteBuf;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Lists;
@@ -10,18 +13,19 @@ import com.google.common.collect.Lists;
 import dev.emi.emi.runtime.EmiLog;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.Identifier;
 
 public class FillRecipeC2SPacket implements EmiPacket {
-	private final int syncId;
-	private final int action;
-	private final List<Integer> slots, crafting;
-	private final int output;
-	private final List<ItemStack> stacks;
+	private int syncId;
+	private int action;
+	private List<Integer> slots, crafting;
+	private int output;
+	private List<ItemStack> stacks;
+
+	public FillRecipeC2SPacket() {
+		//for netty reading
+	}
 
 	public FillRecipeC2SPacket(ScreenHandler handler, int action, List<Slot> slots, List<Slot> crafting, @Nullable Slot output, List<ItemStack> stacks) {
 		this.syncId = handler.syncId;
@@ -32,7 +36,7 @@ public class FillRecipeC2SPacket implements EmiPacket {
 		this.stacks = stacks;
 	}
 
-	public FillRecipeC2SPacket(PacketByteBuf buf) {
+	public void read(PacketByteBuf buf) {
 		syncId = buf.readInt();
 		action = buf.readByte();
 		slots = parseCompressedSlots(buf);
@@ -81,7 +85,7 @@ public class FillRecipeC2SPacket implements EmiPacket {
 			EmiLog.error("Client requested fill but passed input and crafting slot information was invalid, aborting");
 			return;
 		}
-		ScreenHandler handler = player.currentScreenHandler;
+		ScreenHandler handler = player.openScreenHandler;
 		if (handler == null || handler.syncId != syncId) {
 			EmiLog.warn("Client requested fill but screen handler has changed, aborting");
 			return;
@@ -94,61 +98,61 @@ public class FillRecipeC2SPacket implements EmiPacket {
 				EmiLog.error("Client requested fill but passed input slots don't exist, aborting");
 				return;
 			}
-			slots.add(handler.slots.get(i));
+			slots.add(handler.getSlot(i));
 		}
 		for (int i : this.crafting) {
 			if (i >= 0 && i < handler.slots.size()) {
-				crafting.add(handler.slots.get(i));
+				crafting.add(handler.getSlot(i));
 			} else {
 				crafting.add(null);
 			}
 		}
 		if (this.output != -1) {
 			if (this.output >= 0 && this.output < handler.slots.size()) {
-				output = handler.slots.get(this.output);
+				output = handler.getSlot(this.output);
 			}
 		}
 		if (crafting.size() >= stacks.size()) {
 			List<ItemStack> rubble = Lists.newArrayList();
 			for (int i = 0; i < crafting.size(); i++) {
 				Slot s = crafting.get(i);
-				if (s != null && s.canTakeItems(player) && !s.getStack().isEmpty()) {
+				if (s != null && s.canTakeItems(player) && s.getStack() != null) {
 					rubble.add(s.getStack().copy());
-					s.setStack(ItemStack.EMPTY);
+					s.setStack(null);
 				}
 			}
 			try {	
 				for (int i = 0; i < stacks.size(); i++) {
 					ItemStack stack = stacks.get(i);
-					if (stack.isEmpty()) {
+					if (stack == null) {
 						continue;
 					}
 					int gotten = grabMatching(player, slots, rubble, crafting, stack);
-					if (gotten != stack.getCount()) {
+					if (gotten != stack.count) {
 						if (gotten > 0) {
-							stack.setCount(gotten);
-							player.getInventory().offerOrDrop(stack);
+							stack.count = gotten;
+							EmiUtil.offerOrDrop(player, stack);
 						}
 						return;
 					} else {
 						Slot s = crafting.get(i);
-						if (s != null && s.canInsert(stack) && stack.getCount() <= s.getMaxItemCount()) {
+						if (s != null && s.canInsert(stack) && stack.count <= s.getMaxStackAmount()) {
 							s.setStack(stack);
 						} else {
-							player.getInventory().offerOrDrop(stack);
+							EmiUtil.offerOrDrop(player, stack);
 						}
 					}
 				}
 				if (output != null) {
 					if (action == 1) {
-						handler.onSlotClick(output.getIndex(), 0, SlotActionType.PICKUP, player);
+						handler.onSlotClick(output.id, 0, 0, player);
 					} else if (action == 2) {
-						handler.onSlotClick(output.getIndex(), 0, SlotActionType.QUICK_MOVE, player);
+						handler.onSlotClick(output.id, 0, 1, player);
 					}
 				}
 			} finally {
 				for (ItemStack stack : rubble) {
-					player.getInventory().offerOrDrop(stack);
+					EmiUtil.offerOrDrop(player, stack);
 				}
 			}
 		}
@@ -194,22 +198,22 @@ public class FillRecipeC2SPacket implements EmiPacket {
 	}
 
 	private static int grabMatching(PlayerEntity player, List<Slot> slots, List<ItemStack> rubble, List<Slot> crafting, ItemStack stack) {
-		int amount = stack.getCount();
+		int amount = stack.count;
 		int grabbed = 0;
 		for (int i = 0; i < rubble.size(); i++) {
 			if (grabbed >= amount) {
 				return grabbed;
 			}
 			ItemStack r = rubble.get(i);
-			if (ItemStack.canCombine(stack, r)) {
+			if (EmiUtil.canCombineIgnoreCount(stack, r)) {
 				int wanted = amount - grabbed;
-				if (r.getCount() <= wanted) {
-					grabbed += r.getCount();
+				if (r.count <= wanted) {
+					grabbed += r.count;
 					rubble.remove(i);
 					i--;
 				} else {
 					grabbed = amount;
-					r.setCount(r.getCount() - wanted);
+					r.count = r.count - wanted;
 				}
 			}
 		}
@@ -221,14 +225,14 @@ public class FillRecipeC2SPacket implements EmiPacket {
 				continue;
 			}
 			ItemStack st = s.getStack();
-			if (ItemStack.canCombine(stack, st)) {
+			if (EmiUtil.canCombineIgnoreCount(stack, st)) {
 				int wanted = amount - grabbed;
-				if (st.getCount() <= wanted) {
-					grabbed += st.getCount();
-					s.setStack(ItemStack.EMPTY);
+				if (st.count <= wanted) {
+					grabbed += st.count;
+					s.setStack(null);
 				} else {
 					grabbed = amount;
-					st.setCount(st.getCount() - wanted);
+					st.count = st.count - wanted;
 				}
 			}
 		}

@@ -13,6 +13,7 @@ import dev.emi.emi.screen.tooltip.RecipeCostTooltipComponent;
 import dev.emi.emi.screen.tooltip.RecipeTooltipComponent;
 import dev.emi.emi.screen.tooltip.RemainderTooltipComponent;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
@@ -43,14 +44,14 @@ public class EmiTooltipComponents {
 	 * @return A tooltip component that displays the amount of a provided stack.
 	 */
 	public static TooltipComponent getAmount(EmiIngredient ingredient) {
-		return of(EmiRenderHelper.getAmountText(ingredient, ingredient.getAmount()).copy().formatted(Formatting.GRAY));
+		return of(EmiRenderHelper.getAmountText(ingredient, ingredient.getAmount()).copy().setStyle(new Style().setFormatting(Formatting.GRAY)));
 	}
 
 	/**
 	 * A shorthand to create a tooltip component from text
 	 */
 	public static TooltipComponent of(Text text) {
-		return TooltipComponent.of(text.asOrderedText());
+		return TooltipComponent.of(text);
 	}
 
 	/**

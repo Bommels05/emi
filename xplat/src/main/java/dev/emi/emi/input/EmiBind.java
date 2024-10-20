@@ -9,9 +9,7 @@ import java.util.stream.Stream;
 import com.google.common.collect.Lists;
 
 import dev.emi.emi.EmiPort;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
@@ -93,7 +91,7 @@ public class EmiBind {
 		for (ModifiedKey boundKey : boundKeys) {
 			if (EmiInput.getCurrentModifiers() == boundKey.modifiersToMatch()) {
 				if (boundKey.key.getCategory() == InputUtil.Type.KEYSYM && boundKey.key.getCode() != -1) {
-					if (InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), boundKey.key.getCode())) {
+					if (InputUtil.isKeyPressed(boundKey.key.getCode())) {
 						return true;
 					}
 				}
@@ -187,14 +185,14 @@ public class EmiBind {
 			return key == InputUtil.UNKNOWN_KEY;
 		}
 
-		public MutableText getKeyText(Formatting formatting) {
-			MutableText text = EmiPort.literal("", formatting);
+		public Text getKeyText(Formatting formatting) {
+			Text text = EmiPort.literal("", formatting);
 			appendModifiers(text, modifiers());
 			EmiPort.append(text, key().getLocalizedText());
 			return text;
 		}
 	
-		private void appendModifiers(MutableText text, int modifiers) {
+		private void appendModifiers(Text text, int modifiers) {
 			if ((modifiers & EmiInput.CONTROL_MASK) > 0) {
 				EmiPort.append(text, EmiPort.translatable("key.keyboard.control"));
 				EmiPort.append(text, EmiPort.literal(" + "));

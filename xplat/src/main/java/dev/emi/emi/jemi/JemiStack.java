@@ -1,6 +1,6 @@
 package dev.emi.emi.jemi;
 
-import java.util.List;
+/*import java.util.List;
 
 import com.google.common.collect.Lists;
 
@@ -108,4 +108,4 @@ public class JemiStack<T> extends EmiStack {
 	public Text getName() {
 		return EmiPort.literal(helper.getDisplayName(ingredient));
 	}
-}
+}*/

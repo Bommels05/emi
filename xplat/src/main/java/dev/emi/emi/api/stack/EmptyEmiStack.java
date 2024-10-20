@@ -2,6 +2,9 @@ package dev.emi.emi.api.stack;
 
 import java.util.List;
 
+import dev.emi.emi.backport.ItemKey;
+import net.minecraft.block.Blocks;
+import net.minecraft.item.Item;
 import org.jetbrains.annotations.ApiStatus;
 
 import dev.emi.emi.EmiPort;
@@ -16,6 +19,7 @@ import net.minecraft.util.Identifier;
 @ApiStatus.Internal
 public class EmptyEmiStack extends EmiStack {
 	private static final Identifier ID = EmiPort.id("emi", "empty");
+	private static final ItemKey EMPTY_ITEM = new ItemKey(null, 0);
 
 	@Override
 	public EmiStack getRemainder() {
@@ -57,12 +61,12 @@ public class EmptyEmiStack extends EmiStack {
 
 	@Override
 	public Object getKey() {
-		return Items.AIR;
+		return EMPTY_ITEM;
 	}
 
 	@Override
 	public ItemStack getItemStack() {
-		return ItemStack.EMPTY;
+		return null;
 	}
 
 	@Override

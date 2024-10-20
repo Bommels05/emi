@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
 import org.lwjgl.glfw.GLFW;
 
 import com.google.common.collect.Lists;
@@ -24,11 +26,8 @@ import dev.emi.emi.input.EmiBind;
 import dev.emi.emi.input.EmiInput;
 import dev.emi.emi.platform.EmiAgnos;
 import dev.emi.emi.runtime.EmiLog;
-import it.unimi.dsi.fastutil.ints.IntList;
 import joptsimple.internal.Strings;
-import net.minecraft.client.font.TextHandler;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Style;
 import net.minecraft.util.Util;
 
@@ -200,7 +199,7 @@ public class EmiConfig {
 	public static IntGroup leftSidebarSize = new IntGroup(
 		"emi.sidebar.size.",
 		List.of("columns", "rows"),
-		IntList.of(12, 100)
+		List.of(12, 100)
 	);
 
 	@Comment("How much space to maintain between the left sidebar and obstructions, in pixels")
@@ -241,7 +240,7 @@ public class EmiConfig {
 	public static IntGroup rightSidebarSize = new IntGroup(
 		"emi.sidebar.size.",
 		List.of("columns", "rows"),
-		IntList.of(12, 100)
+		List.of(12, 100)
 	);
 
 	@Comment("How much space to maintain between the right sidebar and obstructions, in pixels")
@@ -279,7 +278,7 @@ public class EmiConfig {
 	public static IntGroup topSidebarSize = new IntGroup(
 		"emi.sidebar.size.",
 		List.of("columns", "rows"),
-		IntList.of(9, 9)
+		List.of(9, 9)
 	);
 
 	@Comment("How much space to maintain between the top sidebar and obstructions, in pixels")
@@ -317,7 +316,7 @@ public class EmiConfig {
 	public static IntGroup bottomSidebarSize = new IntGroup(
 		"emi.sidebar.size.",
 		List.of("columns", "rows"),
-		IntList.of(9, 9)
+		List.of(9, 9)
 	);
 
 	@Comment("How much space to maintain between the bottom sidebar and obstructions, in pixels")
@@ -584,7 +583,6 @@ public class EmiConfig {
 
 	public static String getSavedConfig() {
 		Map<String, List<String>> unparsed = Maps.newLinkedHashMap();
-		TextHandler wrapper = new TextHandler((point, style) -> 1);
 		for (Field field : EmiConfig.class.getFields()) {
 			ConfigValue annot = field.getAnnotation(ConfigValue.class);
 			if (annot != null) {
@@ -595,9 +593,9 @@ public class EmiConfig {
 				String commentText = "";
 				if (comment != null) {
 					commentText += "\t/**\n";
-					for (StringVisitable line : wrapper.wrapLines(comment.value(), 80, Style.EMPTY)) {
+					for (String line : (List<String>) MinecraftClient.getInstance().textRenderer.wrapLines(comment.value(), 80)) {
 						commentText += "\t * ";
-						commentText += line.getString();
+						commentText += line;
 						commentText += "\n";
 					}
 					commentText += "\t */\n";
@@ -653,7 +651,7 @@ public class EmiConfig {
 	}
 
 	private static File getGlobalFolder() {
-		String s = switch (Util.getOperatingSystem()) {
+		String s = switch (Util.method_6318()) {
 			case WINDOWS -> System.getenv("APPDATA") + "/.minecraft";
 			case OSX -> System.getProperty("user.home") + "/Library/Application Support/minecraft";
 			default -> System.getProperty("user.home") + "/.minecraft";
@@ -737,8 +735,8 @@ public class EmiConfig {
 			(css, annot, field) -> {
 				String[] parts = css.get(annot).get().split(",");
 				if (parts.length == 2) {
-					((ScreenAlign) field.get(null)).horizontal = ScreenAlign.Horizontal.fromName(parts[0].strip());
-					((ScreenAlign) field.get(null)).vertical = ScreenAlign.Vertical.fromName(parts[1].strip());
+					((ScreenAlign) field.get(null)).horizontal = ScreenAlign.Horizontal.fromName(parts[0].trim());
+					((ScreenAlign) field.get(null)).vertical = ScreenAlign.Vertical.fromName(parts[1].trim());
 				} else {
 					((ScreenAlign) field.get(null)).horizontal = ScreenAlign.Horizontal.CENTER;
 					((ScreenAlign) field.get(null)).vertical = ScreenAlign.Vertical.CENTER;

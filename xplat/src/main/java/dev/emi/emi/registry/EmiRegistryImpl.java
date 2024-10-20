@@ -21,17 +21,10 @@ import dev.emi.emi.api.stack.serializer.EmiIngredientSerializer;
 import dev.emi.emi.runtime.EmiReloadLog;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.recipe.RecipeManager;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ScreenHandlerType;
 
 public class EmiRegistryImpl implements EmiRegistry {
 	private static final MinecraftClient client = MinecraftClient.getInstance();
-
-	@Override
-	public RecipeManager getRecipeManager() {
-		return client.world.getRecipeManager();
-	}
 
 	@Override
 	public void addCategory(EmiRecipeCategory category) {
@@ -121,7 +114,7 @@ public class EmiRegistryImpl implements EmiRegistry {
 	}
 	
 	@Override
-	public <T extends ScreenHandler> void addRecipeHandler(ScreenHandlerType<T> type, EmiRecipeHandler<T> handler) {
+	public <T extends ScreenHandler> void addRecipeHandler(Class<T> type, EmiRecipeHandler<T> handler) {
 		EmiRecipeFiller.handlers.computeIfAbsent(type, (c) -> Lists.newArrayList()).add(handler);
 	}
 

@@ -1,6 +1,7 @@
 package dev.emi.emi.runtime;
 
 import java.util.AbstractList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,10 +24,7 @@ import dev.emi.emi.bom.BoM;
 import dev.emi.emi.bom.ChanceMaterialCost;
 import dev.emi.emi.bom.FlatMaterialCost;
 import dev.emi.emi.bom.MaterialNode;
-import it.unimi.dsi.fastutil.objects.Object2LongLinkedOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2LongMap;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.JsonHelper;
+import dev.emi.emi.backport.EmiJsonHelper;
 
 public class EmiFavorites {
 	public static List<EmiFavorite> favorites = Lists.newArrayList();
@@ -55,10 +53,10 @@ public class EmiFavorites {
 			if (el.isJsonObject()) {
 				JsonObject json = el.getAsJsonObject();
 				EmiRecipe recipe = null;
-				if (JsonHelper.hasString(json, "recipe")) {
-					recipe = EmiApi.getRecipeManager().getRecipe(EmiPort.id(JsonHelper.getString(json, "recipe")));
+				if (EmiJsonHelper.hasString(json, "recipe")) {
+					recipe = EmiApi.getRecipeManager().getRecipe(EmiPort.id(EmiJsonHelper.getString(json, "recipe")));
 				}
-				if (JsonHelper.hasElement(json, "stack")) {
+				if (EmiJsonHelper.hasElement(json, "stack")) {
 					EmiIngredient ingredient = EmiIngredientSerializer.getDeserialized(json.get("stack"));
 					if (ingredient.isEmpty()) {
 						continue;
@@ -162,7 +160,7 @@ public class EmiFavorites {
 			if (stack instanceof EmiStack es && context != null && context.getId() != null) {
 				es = es.copy();
 				if (es instanceof ItemEmiStack ies) {
-					ies.getItemStack().setCount(1);
+					ies.getItemStack().count = 1;
 				}
 				if (!es.isEmpty()) {
 					for (int i = 0; i < favorites.size(); i++) {
@@ -195,14 +193,14 @@ public class EmiFavorites {
 			BoM.tree.calculateCost();
 			Map<EmiIngredient, ChanceMaterialCost> chancedCosts = Maps.newHashMap(BoM.tree.cost.chanceCosts);
 			BoM.tree.calculateProgress(inv);
-			Object2LongMap<EmiRecipe> batches = new Object2LongLinkedOpenHashMap<>();
-			Object2LongMap<EmiRecipe> amounts = new Object2LongLinkedOpenHashMap<>();
+			Map<EmiRecipe, Long> batches = new HashMap<>();
+			Map<EmiRecipe, Long> amounts = new HashMap<>();
 			countRecipes(batches, amounts, BoM.tree.goal);
 			boolean hasSomething = false;
-			for (Object2LongMap.Entry<EmiRecipe> entry : batches.object2LongEntrySet()) {
+			for (Map.Entry<EmiRecipe, Long> entry : batches.entrySet()) {
 				EmiRecipe recipe = entry.getKey();
-				long amount = amounts.getOrDefault(recipe, 0);
-				long batch = entry.getLongValue();
+				long amount = amounts.getOrDefault(recipe, 0L);
+				long batch = entry.getValue();
 				if (amount == 0) {
 					continue;
 				}
@@ -240,7 +238,7 @@ public class EmiFavorites {
 		}
 	}
 
-	public static void countRecipes(Object2LongMap<EmiRecipe> batches, Object2LongMap<EmiRecipe> amounts, MaterialNode node) {
+	public static void countRecipes(Map<EmiRecipe, Long> batches, Map<EmiRecipe, Long> amounts, MaterialNode node) {
 		if (node.recipe instanceof EmiResolutionRecipe recipe) {
 			countRecipes(batches, amounts, node.children.get(0));
 			return;
@@ -250,15 +248,15 @@ public class EmiFavorites {
 			long amount = node.neededBatches;
 			if (batches.containsKey(node.recipe)) {
 				// Remove?
-				amount += batches.getLong(node.recipe);
-				batches.removeLong(node.recipe);
+				amount += batches.get(node.recipe);
+				batches.remove(node.recipe);
 			}
 			batches.put(node.recipe, amount);
 			amount = node.totalNeeded;
 			if (amounts.containsKey(node.recipe)) {
 				// Remove?
-				amount += amounts.getLong(node.recipe);
-				amounts.removeLong(node.recipe);
+				amount += amounts.get(node.recipe);
+				amounts.remove(node.recipe);
 			}
 			amounts.put(node.recipe, amount);
 			for (MaterialNode child : node.children) {

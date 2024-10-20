@@ -5,7 +5,6 @@ import dev.emi.emi.mixin.accessor.HandledScreenAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.screen.recipebook.RecipeBookProvider;
 import net.minecraft.screen.ScreenHandler;
 
 public class EmiScreenBase {
@@ -33,14 +32,9 @@ public class EmiScreenBase {
 	public static EmiScreenBase of(Screen screen) {
 		if (screen instanceof HandledScreen hs) {
 			HandledScreenAccessor hsa = (HandledScreenAccessor) hs;
-			ScreenHandler sh = hs.getScreenHandler();
+			ScreenHandler sh = hs.screenHandler;
 			if (sh.slots != null && !sh.slots.isEmpty()) {
 				int extra = 0;
-				if (hs instanceof RecipeBookProvider provider) {
-					if (provider.getRecipeBookWidget().isOpen()) {
-						extra = 177;
-					}
-				}
 				Bounds bounds = new Bounds(hsa.getX() - extra, hsa.getY(), hsa.getBackgroundWidth() + extra, hsa.getBackgroundHeight());
 				return new EmiScreenBase(screen, bounds);
 			}

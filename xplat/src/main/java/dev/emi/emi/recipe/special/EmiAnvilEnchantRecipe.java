@@ -18,6 +18,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.util.Identifier;
+import net.minecraftforge.common.util.Constants;
 
 public class EmiAnvilEnchantRecipe implements EmiRecipe {
 	private final Item tool;
@@ -77,7 +78,7 @@ public class EmiAnvilEnchantRecipe implements EmiRecipe {
 	}
 
 	private ItemStack getTool() {
-		ItemStack itemStack = tool.getDefaultStack();
+		ItemStack itemStack = new ItemStack(tool);
 		itemStack.addEnchantment(enchantment, level);
 		return itemStack;
 	}
@@ -87,9 +88,9 @@ public class EmiAnvilEnchantRecipe implements EmiRecipe {
 		NbtCompound tag = new NbtCompound();
 		NbtList StoredEnchantments = new NbtList();
 		NbtCompound enchant = new NbtCompound();
-		String id = getTool().getNbt().getList("Enchantments", NbtElement.COMPOUND_TYPE).getCompound(0).getString("id");
+		int id = getTool().getNbt().getList("ench", Constants.NBT.TAG_COMPOUND).getCompound(0).getInt("id");
 
-		enchant.putString("id", id);
+		enchant.putInt("id", id);
 		enchant.putShort("lvl", (short) level);
 		StoredEnchantments.add(enchant);
 		tag.put("StoredEnchantments", StoredEnchantments);

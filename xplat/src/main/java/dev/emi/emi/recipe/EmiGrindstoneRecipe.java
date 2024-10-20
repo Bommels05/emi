@@ -1,6 +1,6 @@
 package dev.emi.emi.recipe;
 
-import dev.emi.emi.EmiPort;
+/*import dev.emi.emi.EmiPort;
 import dev.emi.emi.EmiUtil;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.recipe.VanillaEmiRecipeCategories;
@@ -39,4 +39,4 @@ public class EmiGrindstoneRecipe extends EmiAnvilRepairItemRecipe {
 		widgets.addGeneratedSlot(r -> getItem(r, 1), uniq, 18, 24).drawBack(false);
 		widgets.addGeneratedSlot(r -> getItem(r, 2), uniq, 98, 18).drawBack(false).recipeContext(this);
 	}
-}
+}*/

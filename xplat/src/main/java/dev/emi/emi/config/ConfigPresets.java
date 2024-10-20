@@ -2,6 +2,7 @@ package dev.emi.emi.config;
 
 import java.util.List;
 
+import net.minecraft.client.util.Window;
 import org.lwjgl.glfw.GLFW;
 
 import dev.emi.emi.com.unascribed.qdcss.QDCSS;
@@ -40,7 +41,7 @@ public class ConfigPresets {
 		EmiConfig.leftSidebarHeader = HeaderType.VISIBLE;
 
 		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.getWindow().getScaledHeight() < 260) {
+		if (new Window(client, client.width, client.height).getScaledHeight() < 260) {
 			EmiConfig.leftSidebarSize.values.set(0, 10);
 			EmiConfig.leftSidebarSize.values.set(1, 8);
 		} else {

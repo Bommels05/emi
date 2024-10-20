@@ -3,7 +3,6 @@ package dev.emi.emi.recipe.special;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.google.common.collect.Lists;
 
@@ -16,23 +15,22 @@ import net.minecraft.item.DyeItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.DyeColor;
 import net.minecraft.util.Identifier;
 
 public class EmiFireworkStarFadeRecipe extends EmiPatternCraftingRecipe {
-	private static final List<DyeItem> DYES = Stream.of(DyeColor.values()).map(DyeItem::byColor).toList();
+	private static final List<ItemStack> DYES = EmiArmorDyeRecipe.DYES;
 
 	public EmiFireworkStarFadeRecipe(Identifier id) {
 		super(List.of(
 			EmiIngredient.of(DYES.stream().map(i -> (EmiIngredient) EmiStack.of(i)).collect(Collectors.toList())),
-			EmiStack.of(Items.FIREWORK_STAR)), EmiStack.of(Items.FIREWORK_STAR), id);
+			EmiStack.of(Items.FIREWORK_CHARGE)), EmiStack.of(Items.FIREWORK_CHARGE), id);
 	}
 
 	@Override
 	public SlotWidget getInputWidget(int slot, int x, int y) {
 		return new GeneratedSlotWidget(r -> {
 			EmiStack fireworkStar = getFireworkStar(r, false);
-			List<DyeItem> dyeItems = getDyes(r, 8);
+			List<ItemStack> dyeItems = getDyes(r, 8);
 			final int s = slot - 1;
 			if (slot == 0) {
 				return fireworkStar;
@@ -49,8 +47,8 @@ public class EmiFireworkStarFadeRecipe extends EmiPatternCraftingRecipe {
 		return new GeneratedSlotWidget(r -> getFireworkStar(r, true), unique, x, y);
 	}
 
-	private List<DyeItem> getDyes(Random random, int max) {
-		List<DyeItem> dyes = Lists.newArrayList();
+	private List<ItemStack> getDyes(Random random, int max) {
+		List<ItemStack> dyes = Lists.newArrayList();
 		int amount = 1 + random.nextInt(max);
 		for (int i = 0; i < amount; i++) {
 			dyes.add(DYES.get(random.nextInt(DYES.size())));
@@ -59,7 +57,7 @@ public class EmiFireworkStarFadeRecipe extends EmiPatternCraftingRecipe {
 	}
 
 	private EmiStack getFireworkStar(Random random, Boolean faded) {
-		ItemStack stack = new ItemStack(Items.FIREWORK_STAR);
+		ItemStack stack = new ItemStack(Items.FIREWORK_CHARGE);
 		NbtCompound tag = new NbtCompound();
 		NbtCompound explosion = new NbtCompound();
 		int items = 0;
@@ -85,20 +83,20 @@ public class EmiFireworkStarFadeRecipe extends EmiPatternCraftingRecipe {
 			items = items + 2;
 		}
 
-		List<DyeItem> dyeItems = getDyes(random, 8 - items);
+		List<ItemStack> dyeItems = getDyes(random, 8 - items);
 		List<Integer> colors = Lists.newArrayList();
-		for (DyeItem dyeItem : dyeItems) {
-			colors.add(dyeItem.getColor().getFireworkColor());
+		for (ItemStack dyeItem : dyeItems) {
+			colors.add(DyeItem.COLORS[dyeItem.getData()]);
 		}
-		explosion.putIntArray("Colors", colors);
+		explosion.putIntArray("Colors", colors.stream().mapToInt(i -> i).toArray());
 
 		if (faded) {
-			List<DyeItem> dyeItemsFaded = getDyes(random, 8);
+			List<ItemStack> dyeItemsFaded = getDyes(random, 8);
 			List<Integer> fadedColors = Lists.newArrayList();
-			for (DyeItem dyeItem : dyeItemsFaded) {
-				fadedColors.add(dyeItem.getColor().getFireworkColor());
+			for (ItemStack dyeItem : dyeItemsFaded) {
+				fadedColors.add(DyeItem.COLORS[dyeItem.getData()]);
 			}
-			explosion.putIntArray("FadeColors", fadedColors);
+			explosion.putIntArray("FadeColors", fadedColors.stream().mapToInt(i -> i).toArray());
 		}
 
 		tag.put("Explosion", explosion);

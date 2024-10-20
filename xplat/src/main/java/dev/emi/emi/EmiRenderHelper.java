@@ -16,29 +16,26 @@ import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.Widget;
 import dev.emi.emi.api.widget.WidgetHolder;
 import dev.emi.emi.config.EmiConfig;
-import dev.emi.emi.mixin.accessor.OrderedTextTooltipComponentAccessor;
-import dev.emi.emi.mixin.accessor.ScreenAccessor;
+import dev.emi.emi.mixin.accessor.DrawableHelperAccessor;
 import dev.emi.emi.registry.EmiRecipeFiller;
 import dev.emi.emi.runtime.EmiDrawContext;
 import dev.emi.emi.screen.EmiScreenManager;
+import dev.emi.emi.screen.widget.config.ListWidget;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.tooltip.OrderedTextTooltipComponent;
+import net.minecraft.client.gui.tooltip.TextTooltipComponent;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat.DrawMode;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.texture.Sprite;
+import net.minecraft.client.render.item.ItemRenderer;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Matrix4f;
+import net.minecraftforge.fluids.Fluid;
+import org.lwjgl.opengl.GL11;
 
 public class EmiRenderHelper {
 	public static final DecimalFormat TEXT_FORMAT = new DecimalFormat("0.##");
@@ -51,6 +48,7 @@ public class EmiRenderHelper {
 	public static final Identifier DASH = EmiPort.id("emi", "textures/gui/dash.png");
 	public static final Identifier CONFIG = EmiPort.id("emi", "textures/gui/config.png");
 	public static final Identifier PIECES = EmiPort.id("emi", "textures/gui/pieces.png");
+	public static final ItemRenderer ITEM_RENDERER = new ItemRenderer();
 
 	public static void drawNinePatch(EmiDrawContext context, Identifier texture, int x, int y, int w, int h, int u, int v, int cornerLength, int centerLength) {
 		int cor = cornerLength;
@@ -80,7 +78,7 @@ public class EmiRenderHelper {
 		context.drawTexture(texture, x + coriw, y + corih, cor,        cor,         u + corcen, v + corcen, cor, cor, 256, 256);
 	}
 
-	public static void drawTintedSprite(MatrixStack matrices, Sprite sprite, int color, int x, int y, int xOff, int yOff, int width, int height) {
+	/*public static void drawTintedSprite(MatrixStack matrices, Sprite sprite, int color, int x, int y, int xOff, int yOff, int width, int height) {
 		if (sprite == null) {
 			return;
 		}
@@ -111,7 +109,7 @@ public class EmiRenderHelper {
 		bufferBuilder.vertex(model, xMax, yMin, 1).color(r, g, b, 1).texture(uMax, vMin).next();
 		bufferBuilder.vertex(model, xMin, yMin, 1).color(r, g, b, 1).texture(uMin, vMin).next();
 		EmiPort.draw(bufferBuilder);
-	}
+	}*/
 
 	public static void drawScroll(EmiDrawContext context, int x, int y, int width, int height, int progress, int total, int color) {
 		if (total <= 1) {
@@ -130,18 +128,18 @@ public class EmiRenderHelper {
 		return
 			EmiPort.append(
 				EmiPort.append(
-					EmiPort.literal("E", Style.EMPTY.withColor(0xeb7bfc)),
-					EmiPort.literal("M", Style.EMPTY.withColor(0x7bfca2))),
-				EmiPort.literal("I", Style.EMPTY.withColor(0x7bebfc)));
+					EmiPort.literal("E", Formatting.LIGHT_PURPLE),
+					EmiPort.literal("M", Formatting.GREEN)),
+				EmiPort.literal("I", Formatting.AQUA));
 	}
 
 	public static Text getPageText(int page, int total, int maxWidth) {
 		Text text = EmiPort.translatable("emi.page", page, total);
-		if (CLIENT.textRenderer.getWidth(text) > maxWidth) {
+		if (CLIENT.textRenderer.getStringWidth(text.asUnformattedString()) > maxWidth) {
 			text = EmiPort.translatable("emi.page.short", page, total);
-			if (CLIENT.textRenderer.getWidth(text) > maxWidth) {
+			if (CLIENT.textRenderer.getStringWidth(text.asUnformattedString()) > maxWidth) {
 				text = EmiPort.literal("" + page);
-				if (CLIENT.textRenderer.getWidth(text) > maxWidth) {
+				if (CLIENT.textRenderer.getStringWidth(text.asUnformattedString()) > maxWidth) {
 					text = EmiPort.literal("");
 				}
 			}
@@ -168,20 +166,14 @@ public class EmiRenderHelper {
 		// Some mods assume this list will be mutable, oblige them
 		List<TooltipComponent> mutable = Lists.newArrayList();
 		int wrapWidth = Math.max(components.stream()
-			.map(c -> c instanceof OrderedTextTooltipComponent ? 0 : c.getWidth(CLIENT.textRenderer))
+			.map(c -> c instanceof TextTooltipComponent ? 0 : c.getWidth(CLIENT.textRenderer))
 			.max(Integer::compare).orElse(0), maxWidth);
 		for (TooltipComponent comp : components) {
-			if (comp instanceof OrderedTextTooltipComponent ottc && ottc.getWidth(CLIENT.textRenderer) > wrapWidth) {
+			if (comp instanceof TextTooltipComponent ottc && ottc.getWidth(CLIENT.textRenderer) > wrapWidth) {
 				try {
-					OrderedText ordered = ((OrderedTextTooltipComponentAccessor) ottc).getText();
-					MutableText text = Text.empty();
-					// Mojang, what is this??? Please give me some other way to wrap
-					ordered.accept(((var1, style, codepoint) -> {
-						text.append(EmiPort.literal(String.valueOf(Character.toChars(codepoint)), style));
-						return true;
-					}));
-					for (OrderedText o : CLIENT.textRenderer.wrapLines(text, wrapWidth)) {
-						mutable.add(TooltipComponent.of(o));
+					String text =  ottc.getText();
+					for (String o : (List<String>) CLIENT.textRenderer.wrapLines(text, wrapWidth)) {
+						mutable.add(new TextTooltipComponent(o));
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -191,7 +183,71 @@ public class EmiRenderHelper {
 				mutable.add(comp);
 			}
 		}
-		((ScreenAccessor) screen).invokeRenderTooltipFromComponents(context.raw(), mutable, x, y);
+		if (!mutable.isEmpty()) {
+			drawTooltipInternal(CLIENT.textRenderer, screen, mutable, x, y);
+		}
+	}
+
+	private static void drawTooltipInternal(TextRenderer textRenderer, Screen screen, List<TooltipComponent> tooltips, int x, int y) {
+		DrawableHelperAccessor helper = (DrawableHelperAccessor) screen;
+		//Copied from vanilla
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glPushMatrix();
+		GL11.glTranslatef(0, 0, 300);
+		int maxWidth = 0;
+
+		for (TooltipComponent tooltip : tooltips) {
+			int width = tooltip.getWidth(textRenderer);
+			if (width > maxWidth) {
+				maxWidth = width;
+			}
+		}
+
+		int tooltipX = x + 12;
+		int tooltipY = y - 12;
+		int maxHeight = 8;
+		if (tooltips.size() > 1) {
+			maxHeight = 0;
+			for (TooltipComponent tooltip : tooltips) {
+				maxHeight += tooltip.getHeight();
+			}
+		}
+
+		if (tooltipX + maxWidth > screen.width) {
+			tooltipX -= 28 + maxWidth;
+		}
+
+		if (tooltipY + maxHeight + 6 > screen.height) {
+			tooltipY = screen.height - maxHeight - 6;
+		}
+
+		int backgroundColor = -267386864;
+		//Background
+		helper.fillGradient(tooltipX - 3, tooltipY - 4, tooltipX + maxWidth + 3, tooltipY - 3, backgroundColor, backgroundColor);
+		helper.fillGradient(tooltipX - 3, tooltipY + maxHeight + 3, tooltipX + maxWidth + 3, tooltipY + maxHeight + 4, backgroundColor, backgroundColor);
+		helper.fillGradient(tooltipX - 3, tooltipY - 3, tooltipX + maxWidth + 3, tooltipY + maxHeight + 3, backgroundColor, backgroundColor);
+		helper.fillGradient(tooltipX - 4, tooltipY - 3, tooltipX - 3, tooltipY + maxHeight + 3, backgroundColor, backgroundColor);
+		helper.fillGradient(tooltipX + maxWidth + 3, tooltipY - 3, tooltipX + maxWidth + 4, tooltipY + maxHeight + 3, backgroundColor, backgroundColor);
+		//Borders
+		int borderColor = 1347420415;
+		int borderColor2 = (borderColor & 16711422) >> 1 | borderColor & 0xFF000000;
+		helper.fillGradient(tooltipX - 3, tooltipY - 3 + 1, tooltipX - 3 + 1, tooltipY + maxHeight + 3 - 1, borderColor, borderColor2);
+		helper.fillGradient(tooltipX + maxWidth + 2, tooltipY - 3 + 1, tooltipX + maxWidth + 3, tooltipY + maxHeight + 3 - 1, borderColor, borderColor2);
+		helper.fillGradient(tooltipX - 3, tooltipY - 3, tooltipX + maxWidth + 3, tooltipY - 3 + 1, borderColor, borderColor);
+		helper.fillGradient(tooltipX - 3, tooltipY + maxHeight + 2, tooltipX + maxWidth + 3, tooltipY + maxHeight + 3, borderColor2, borderColor2);
+
+		for (int i = 0; i < tooltips.size(); i++) {
+			TooltipComponent tooltip = tooltips.get(i);
+			tooltip.drawText(textRenderer, tooltipX, tooltipY);
+			tooltip.drawItems(textRenderer, tooltipX, tooltipY);
+			if (i == 0) {
+				tooltipY += 2;
+			}
+
+			tooltipY += tooltip.getHeight();
+		}
+
+		GL11.glPopMatrix();
 	}
 
 	public static void drawSlotHightlight(EmiDrawContext context, int x, int y, int w, int h, int z) {
@@ -232,7 +288,7 @@ public class EmiRenderHelper {
 	}
 
 	public static int getAmountOverflow(Text amount) {
-		int width = CLIENT.textRenderer.getWidth(amount);
+		int width = CLIENT.textRenderer.getStringWidth(amount.asUnformattedString());
 		if (width > 14) {
 			return width - 14;
 		} else {
@@ -243,7 +299,7 @@ public class EmiRenderHelper {
 	public static void renderAmount(EmiDrawContext context, int x, int y, Text amount) {
 		context.push();
 		context.matrices().translate(0, 0, 200);
-		int tx = x + 17 - Math.min(14, CLIENT.textRenderer.getWidth(amount));
+		int tx = x + 17 - Math.min(14, CLIENT.textRenderer.getStringWidth(amount.asUnformattedString()));
 		context.drawTextWithShadow(amount, tx, y + 9, -1);
 		context.pop();
 	}
@@ -255,6 +311,7 @@ public class EmiRenderHelper {
 		RenderSystem.setShaderTexture(0, EmiRenderHelper.WIDGETS);
 		context.drawTexture(WIDGETS, x, y, 8, 252, 4, 4);
 		context.pop();
+		RenderSystem.disableDepthTest();
 	}
 
 	public static void renderTag(EmiIngredient ingredient, EmiDrawContext context, int x, int y) {
@@ -336,7 +393,7 @@ public class EmiRenderHelper {
 			RenderSystem.applyModelViewMatrix();
 
 			recipe.addWidgets(holder);
-			float delta = MinecraftClient.getInstance().getTickDelta();
+			float delta = MinecraftClient.getInstance().ticker.tickDelta;
 			for (Widget widget : widgets) {
 				widget.render(context.raw(), -1000, -1000, delta);
 			}
@@ -368,5 +425,25 @@ public class EmiRenderHelper {
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
+	}
+
+	public static void renderSplitBackground(Screen screen, ListWidget list) {
+		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+		RenderSystem.setShaderTexture(0, DrawableHelper.OPTIONS_BACKGROUND_TEXTURE);
+		Tessellator tessellator = Tessellator.INSTANCE;
+		tessellator.begin();
+		tessellator.color(4210752);
+		tessellator.vertex(0, list.getTop(), 0.0, 0.0, ((float) list.getTop() / 32F - 100F));
+		tessellator.vertex(screen.width, list.getTop(), 0.0, ((float) screen.width / 32F), ((float) list.getTop() / 32F - 100F));
+		tessellator.vertex(screen.width, 0.0, 0.0, ((float) screen.width / 32F), -100F);
+		tessellator.vertex(0.0, 0.0, 0.0, 0.0, -100F);
+		tessellator.end();
+		tessellator.begin();
+		tessellator.color(4210752);
+		tessellator.vertex(0, screen.height, 0.0, 0.0, ((float) (screen.height - list.getBottom()) / 32F - 100F));
+		tessellator.vertex(screen.width, screen.height, 0.0, ((float) screen.width / 32F), ((float) (screen.height - list.getBottom()) / 32F - 100F));
+		tessellator.vertex(screen.width, list.getBottom(), 0.0, ((float) screen.width / 32F), -100F);
+		tessellator.vertex(0.0, list.getBottom(), 0.0, 0.0, -100F);
+		tessellator.end();
 	}
 }

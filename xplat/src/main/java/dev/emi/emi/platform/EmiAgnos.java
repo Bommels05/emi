@@ -7,10 +7,11 @@ import java.util.Map;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.FluidEmiStack;
+import dev.emi.emi.backport.ItemKey;
 import dev.emi.emi.registry.EmiPluginContainer;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.fluid.Fluid;
+import net.minecraftforge.fluids.Fluid;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
@@ -70,6 +71,12 @@ public abstract class EmiAgnos {
 		return delegate.getAllModAuthorsAgnos();
 	}
 
+	protected abstract List<String> getAllModIdsAgnos();
+
+	public static List<String> getAllModIds() {
+		return delegate.getAllModIdsAgnos();
+	}
+
 	protected abstract List<String> getAllModAuthorsAgnos();
 
 	public static List<EmiPluginContainer> getPlugins() {
@@ -108,31 +115,21 @@ public abstract class EmiAgnos {
 
 	protected abstract boolean isFloatyFluidAgnos(FluidEmiStack stack);
 
-	public static void renderFluid(FluidEmiStack stack, MatrixStack matrices, int x, int y, float delta) {
-		renderFluid(stack, matrices, x, y, delta, 0, 0, 16, 16);
-	}
-
-	public static void renderFluid(FluidEmiStack stack, MatrixStack matrices, int x, int y, float delta, int xOff, int yOff, int width, int height) {
-		delegate.renderFluidAgnos(stack, matrices, x, y, delta, xOff, yOff, width, height);
-	}
-
-	protected abstract void renderFluidAgnos(FluidEmiStack stack, MatrixStack matrices, int x, int y, float delta, int xOff, int yOff, int width, int height);
-
 	public static EmiStack createFluidStack(Object object) {
 		return delegate.createFluidStackAgnos(object);
 	}
 
 	protected abstract EmiStack createFluidStackAgnos(Object object);
 
-	public static boolean canBatch(ItemStack stack) {
+	/*public static boolean canBatch(ItemStack stack) {
 		return delegate.canBatchAgnos(stack);
 	}
 	
-	protected abstract boolean canBatchAgnos(ItemStack stack);
+	protected abstract boolean canBatchAgnos(ItemStack stack);*/
 
-	public static Map<Item, Integer> getFuelMap() {
+	public static Map<ItemKey, Integer> getFuelMap() {
 		return delegate.getFuelMapAgnos();
 	}
 
-	protected abstract Map<Item, Integer> getFuelMapAgnos();
+	protected abstract Map<ItemKey, Integer> getFuelMapAgnos();
 }

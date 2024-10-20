@@ -1,6 +1,6 @@
 package dev.emi.emi.jemi;
 
-import java.util.List;
+/*import java.util.List;
 import java.util.Optional;
 
 import dev.emi.emi.api.recipe.EmiCraftingRecipe;
@@ -48,7 +48,7 @@ public class JemiRecipeHandler<T extends ScreenHandler, R> implements EmiRecipeH
 			if (!categories.isEmpty()) {
 				category = categories.get(0);
 			}
-		}*/
+		}*//*
 	}
 
 	@Override
@@ -144,7 +144,7 @@ public class JemiRecipeHandler<T extends ScreenHandler, R> implements EmiRecipeH
 			if (category != null) {
 				builder = new JemiRecipeLayoutBuilder();
 				category.setRecipe(builder, rawRecipe, JemiPlugin.runtime.getJeiHelpers().getFocusFactory().getEmptyFocusGroup());
-			}*/
+			}*//*
 		} else if (type != null) {
 			return null;
 		}
@@ -258,4 +258,4 @@ public class JemiRecipeHandler<T extends ScreenHandler, R> implements EmiRecipeH
 			}
 		}
 	}
-}
+}*/

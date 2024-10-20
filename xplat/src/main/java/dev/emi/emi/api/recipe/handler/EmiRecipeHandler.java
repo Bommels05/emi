@@ -24,7 +24,7 @@ public interface EmiRecipeHandler<T extends ScreenHandler> {
 	 *  Craftables can only ever be discovered if the inventory contains one of its ingredients.
 	 * 	A changed inventory indicates that EMI needs to refresh craftables.
 	 */
-	EmiPlayerInventory getInventory(HandledScreen<T> screen);
+	EmiPlayerInventory getInventory(HandledScreen screen);
 
 	/**
 	 * @return Whether the handler is applicable for the provided recipe.

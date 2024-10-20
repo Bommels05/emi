@@ -1,9 +1,10 @@
 package dev.emi.emi.api.recipe;
 
 import java.util.Comparator;
+import java.util.List;
 
+import dev.emi.emi.EmiUtil;
 import dev.emi.emi.registry.EmiRecipeSorter;
-import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.util.Identifier;
 
 public class EmiRecipeSorting {
@@ -26,7 +27,7 @@ public class EmiRecipeSorting {
 			} else if (b == null) {
 				return -1;
 			}
-			return a.compareTo(b);
+			return EmiUtil.compareIdentifier(a, b);
 		};
 	}
 	
@@ -50,10 +51,10 @@ public class EmiRecipeSorting {
 		};
 	}
 
-	private static int compareStacks(IntList a, IntList b) {
+	private static int compareStacks(List<Integer> a, List<Integer> b) {
 		int min = Math.min(a.size(), b.size());
 		for (int i = 0; i < min; i++) {
-			int comparison = Integer.compare(a.getInt(i), b.getInt(i));
+			int comparison = Integer.compare(a.get(i), b.get(i));
 			if (comparison != 0) {
 				return comparison;
 			}

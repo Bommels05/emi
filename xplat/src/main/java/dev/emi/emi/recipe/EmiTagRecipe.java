@@ -12,7 +12,7 @@ import dev.emi.emi.api.recipe.EmiResolutionRecipe;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.TagEmiIngredient;
-import net.minecraft.tag.TagKey;
+import dev.emi.emi.backport.TagKey;
 import net.minecraft.util.Identifier;
 
 public class EmiTagRecipe extends EmiIngredientRecipe {
@@ -48,6 +48,6 @@ public class EmiTagRecipe extends EmiIngredientRecipe {
 
 	@Override
 	public Identifier getId() {
-		return EmiPort.id("emi", "/tag/" + key.registry().getValue().getPath() + "/" + EmiUtil.subId(key.id()));
+		return EmiPort.id("emi", "/tag/" + key.getType().toString() + "/" + EmiUtil.subId(key.id()));
 	}
 }

@@ -1,15 +1,15 @@
 package dev.emi.emi.runtime;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.api.stack.EmiIngredient;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawableHelper;
+import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.OrderedText;
+import dev.emi.emi.backport.OrderedText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import org.lwjgl.opengl.GL11;
 
 public class EmiDrawContext {
 	private final MinecraftClient client = MinecraftClient.getInstance();
@@ -49,18 +49,19 @@ public class EmiDrawContext {
 
 	public void drawTexture(Identifier texture, int x, int y, int z, float u, float v, int width, int height, int textureWidth, int textureHeight) {
 		EmiPort.setPositionTexShader();
-		RenderSystem.setShaderTexture(0, texture);
-		DrawableHelper.drawTexture(matrices, x, y, z, u, v, width, height, textureWidth, textureHeight);
+		MinecraftClient.getInstance().getTextureManager().bindTexture(texture);
+		DrawableHelper.drawTexture(x, y, u, v, width, height, textureWidth, textureHeight);
 	}
 
 	public void drawTexture(Identifier texture, int x, int y, int width, int height, float u, float v, int regionWidth, int regionHeight, int textureWidth, int textureHeight) {
 		EmiPort.setPositionTexShader();
-		RenderSystem.setShaderTexture(0, texture);
-		DrawableHelper.drawTexture(matrices, x, y, width, height, u, v, regionWidth, regionHeight, textureWidth, textureHeight);
+		MinecraftClient.getInstance().getTextureManager().bindTexture(texture);
+		DrawableHelper.drawTexture(x, y, u, v, regionWidth, regionHeight, width, height, textureWidth, textureHeight);
 	}
 
 	public void fill(int x, int y, int width, int height, int color) {
-		DrawableHelper.fill(matrices, x, y, x + width, y + height, color);
+		DrawableHelper.fill( x, y, x + width, y + height, color);
+		resetColor();
 	}
 
 	public void drawText(Text text, int x, int y) {
@@ -68,11 +69,15 @@ public class EmiDrawContext {
 	}
 
 	public void drawText(Text text, int x, int y, int color) {
-		client.textRenderer.draw(matrices, text, x, y, color);
+		client.textRenderer.draw(text.asFormattedString(), x, y, color);
+	}
+
+	public void drawText(String text, int x, int y, int color) {
+		client.textRenderer.draw(text, x, y, color);
 	}
 
 	public void drawText(OrderedText text, int x, int y, int color) {
-		client.textRenderer.draw(matrices, text, x, y, color);
+		client.textRenderer.draw(text.asString(), x, y, color);
 	}
 
 	public void drawTextWithShadow(Text text, int x, int y) {
@@ -80,11 +85,13 @@ public class EmiDrawContext {
 	}
 
 	public void drawTextWithShadow(Text text, int x, int y, int color) {
-		client.textRenderer.drawWithShadow(matrices, text, x, y, color);
+		client.textRenderer.method_956(text.asFormattedString(), x, y, color);
+		resetColor();
 	}
 
 	public void drawTextWithShadow(OrderedText text, int x, int y, int color) {
-		client.textRenderer.drawWithShadow(matrices, text, x, y, color);
+		client.textRenderer.method_956(text.asString(), x, y, color);
+		resetColor();
 	}
 
 	public void drawCenteredText(Text text, int x, int y) {
@@ -92,7 +99,8 @@ public class EmiDrawContext {
 	}
 
 	public void drawCenteredText(Text text, int x, int y, int color) {
-		client.textRenderer.draw(matrices, text, x - client.textRenderer.getWidth(text) / 2, y, color);
+		client.textRenderer.draw(text.asFormattedString(), x - (client.textRenderer.getStringWidth(text.asUnformattedString()) / 2), y, color);
+		resetColor();
 	}
 
 	public void drawCenteredTextWithShadow(Text text, int x, int y) {
@@ -100,7 +108,8 @@ public class EmiDrawContext {
 	}
 
 	public void drawCenteredTextWithShadow(Text text, int x, int y, int color) {
-		DrawableHelper.drawCenteredTextWithShadow(matrices, client.textRenderer, text.asOrderedText(), x, y, color);
+		client.textRenderer.method_956(text.asFormattedString(), x - (client.textRenderer.getStringWidth(text.asUnformattedString()) / 2), y, color);
+		resetColor();
 	}
 
 	public void resetColor() {
@@ -112,15 +121,15 @@ public class EmiDrawContext {
 	}
 
 	public void setColor(float r, float g, float b, float a) {
-		RenderSystem.setShaderColor(r, g, b, a);
+		GL11.glColor4f(r, g, b, a);
 	}
 
 	public void drawStack(EmiIngredient stack, int x, int y) {
-		stack.render(raw(), x, y, client.getTickDelta());
+		stack.render(raw(), x, y, client.ticker.tickDelta);
 	}
 
 	public void drawStack(EmiIngredient stack, int x, int y, int flags) {
-		drawStack(stack, x, y, client.getTickDelta(), flags);
+		drawStack(stack, x, y, client.ticker.tickDelta, flags);
 	}
 
 	public void drawStack(EmiIngredient stack, int x, int y, float delta, int flags) {

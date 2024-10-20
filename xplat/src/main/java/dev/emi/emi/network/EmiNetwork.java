@@ -3,7 +3,7 @@ package dev.emi.emi.network;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 
 public class EmiNetwork {

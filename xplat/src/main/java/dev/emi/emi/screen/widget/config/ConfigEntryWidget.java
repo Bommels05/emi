@@ -1,16 +1,21 @@
 package dev.emi.emi.screen.widget.config;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
 import com.google.common.collect.Lists;
 
+import dev.emi.emi.backport.ButtonManager;
 import dev.emi.emi.config.EmiConfig.ConfigGroup;
 import dev.emi.emi.runtime.EmiDrawContext;
 import dev.emi.emi.screen.widget.config.ListWidget.Entry;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 
@@ -22,6 +27,10 @@ public abstract class ConfigEntryWidget extends Entry {
 	public ConfigGroup group;
 	public boolean endGroup = false;
 	private List<? extends Element> children = List.of();
+	protected List<ButtonWidget> buttons = new ArrayList<>();
+	protected ButtonManager buttonManager = new ButtonManager();
+	protected List<ExtendedTextFieldWidget> textFields = new ArrayList<>();
+	protected ExtendedTextFieldWidget lastFocused = null;
 	public List<GroupNameWidget> parentGroups = Lists.newArrayList();
 	
 	public ConfigEntryWidget(Text name, List<TooltipComponent> tooltip, Supplier<String> search, int height) {
@@ -60,6 +69,48 @@ public abstract class ConfigEntryWidget extends Entry {
 				drawable.render(context.raw(), mouseX, mouseY, delta);
 			}
 		}
+		for (ButtonWidget button : buttons) {
+			button.render(MinecraftClient.getInstance(), mouseX, mouseY);
+		}
+		for (ExtendedTextFieldWidget textField : textFields) {
+			textField.render();
+		}
+	}
+
+	@Override
+	public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+		if (super.mouseClicked(mouseX, mouseY, mouseButton)) {
+			return true;
+		} else {
+			for (ButtonWidget button : buttons) {
+				if (button.isMouseOver(MinecraftClient.getInstance(), (int) mouseX, (int) mouseY)) {
+					buttonManager.handleClick(button);
+					return true;
+				}
+			}
+			for (ExtendedTextFieldWidget textField : textFields) {
+				if (textField.isMouseOver((int) mouseX, (int) mouseY)) {
+					textField.mouseClicked((int) mouseX, (int) mouseY, mouseButton);
+					for (ExtendedTextFieldWidget field : textFields) {
+						if (field != textField) {
+							field.setFocused(false);
+						}
+					}
+					return true;
+				}
+			}
+			return false;
+        }
+    }
+
+	@Override
+	public boolean keyPressed(char c, int keyCode) {
+		for (ExtendedTextFieldWidget textField : textFields) {
+			if (textField.keyPressed(c, keyCode)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
@@ -68,7 +119,7 @@ public abstract class ConfigEntryWidget extends Entry {
 	}
 
 	public String getSearchableText() {
-		return name.getString();
+		return name.asUnformattedString();
 	}
 
 	public boolean isParentVisible() {
@@ -86,7 +137,7 @@ public abstract class ConfigEntryWidget extends Entry {
 			return true;
 		}
 		for (GroupNameWidget g : parentGroups) {
-			if (g.text.getString().toLowerCase().contains(s)) {
+			if (g.text.asUnformattedString().toLowerCase().contains(s)) {
 				return true;
 			}
 		}
@@ -104,5 +155,24 @@ public abstract class ConfigEntryWidget extends Entry {
 	@Override
 	public List<? extends Element> children() {
 		return children;
+	}
+
+	@Override
+	public void setFocused(boolean focused) {
+		super.setFocused(focused);
+		if (!focused) {
+			for (ExtendedTextFieldWidget textField : textFields) {
+				if (textField.isFocused()) {
+					textField.setFocused(false);
+					lastFocused = textField;
+				}
+			}
+		} else if (this.parentList.getFocused() == this && lastFocused != null){
+			lastFocused.setFocused(true);
+		}
+	}
+
+	public List<ExtendedTextFieldWidget> getTextFields() {
+		return textFields;
 	}
 }

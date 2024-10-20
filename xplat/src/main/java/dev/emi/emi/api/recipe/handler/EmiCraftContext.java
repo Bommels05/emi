@@ -7,14 +7,14 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.screen.ScreenHandler;
 
 public class EmiCraftContext<T extends ScreenHandler> {
-	private final HandledScreen<T> screen;
+	private final HandledScreen screen;
 	private final EmiPlayerInventory inventory;
 	private final Type type;
 	private final Destination destination;
 	private final int amount;
 
 	@ApiStatus.Internal
-	public EmiCraftContext(HandledScreen<T> screen, EmiPlayerInventory inventory, Type type, Destination destination, int amount) {
+	public EmiCraftContext(HandledScreen screen, EmiPlayerInventory inventory, Type type, Destination destination, int amount) {
 		this.screen = screen;
 		this.inventory = inventory;
 		this.type = type;
@@ -23,16 +23,16 @@ public class EmiCraftContext<T extends ScreenHandler> {
 	}
 
 	@ApiStatus.Internal
-	public EmiCraftContext(HandledScreen<T> screen, EmiPlayerInventory inventory, Type type) {
+	public EmiCraftContext(HandledScreen screen, EmiPlayerInventory inventory, Type type) {
 		this(screen, inventory, type, Destination.NONE, 1);
 	}
 
-	public HandledScreen<T> getScreen() {
+	public HandledScreen getScreen() {
 		return screen;
 	}
 
 	public T getScreenHandler() {
-		return screen.getScreenHandler();
+		return (T) screen.screenHandler;
 	}
 
 	public EmiPlayerInventory getInventory() {

@@ -20,7 +20,7 @@ public abstract class Widget implements Drawable {
 		return false;
 	}
 
-	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+	public boolean keyPressed(int keyCode, int scanCode) {
 		return false;
 	}
 }

@@ -1,6 +1,6 @@
 package dev.emi.emi.jemi;
 
-import java.util.List;
+/*import java.util.List;
 import java.util.Optional;
 
 import org.jetbrains.annotations.Nullable;
@@ -186,4 +186,4 @@ public class JemiRecipe<T> implements EmiRecipe {
 			return category.handleInput(recipe, EmiScreenManager.lastMouseX, EmiScreenManager.lastMouseY, InputUtil.fromKeyCode(keyCode, scanCode));
 		}
 	}
-}
+}*/

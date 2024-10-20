@@ -265,7 +265,7 @@ public class SlotWidget extends Widget {
 	}
 
 	@Override
-	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+	public boolean keyPressed(int keyCode, int scanCode) {
 		if (slotInteraction(bind -> bind.matchesKey(keyCode, scanCode))) {
 			return true;
 		}

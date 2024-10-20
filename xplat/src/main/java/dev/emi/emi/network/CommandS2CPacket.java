@@ -6,22 +6,26 @@ import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.bom.BoM;
 import dev.emi.emi.registry.EmiCommands;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.PacketByteBuf;
 
 public class CommandS2CPacket implements EmiPacket {
-	private final byte type;
-	private final Identifier id;
+	private byte type;
+	private Identifier id;
+
+	public CommandS2CPacket() {
+		//for netty reading
+	}
 
 	public CommandS2CPacket(byte type, Identifier id) {
 		this.type = type;
 		this.id = id;
 	}
 
-	public CommandS2CPacket(PacketByteBuf buf) {
+	public void read(PacketByteBuf buf) {
 		type = buf.readByte();
 		if (type == EmiCommands.VIEW_RECIPE || type == EmiCommands.TREE_GOAL || type == EmiCommands.TREE_RESOLUTION) {
-			id = buf.readIdentifier();
+			id = new Identifier(buf.readString(32767));
 		} else {
 			id = null;
 		}
@@ -31,7 +35,7 @@ public class CommandS2CPacket implements EmiPacket {
 	public void write(PacketByteBuf buf) {
 		buf.writeByte(type);
 		if (type == EmiCommands.VIEW_RECIPE || type == EmiCommands.TREE_GOAL || type == EmiCommands.TREE_RESOLUTION) {
-			buf.writeIdentifier(id);
+			buf.method_7423(id.toString());
 		}
 	}
 

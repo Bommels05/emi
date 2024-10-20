@@ -31,6 +31,7 @@ architectury {
 
 loom {
 	accessWidenerPath = project(":xplat").loom.accessWidenerPath
+	intermediaryUrl = "https://repo.legacyfabric.net/repository/legacyfabric/net/legacyfabric/intermediary/%1\$s/intermediary-%1\$s-v2.jar"
 
 	mods {
 		main {
@@ -57,9 +58,11 @@ configurations {
 
 dependencies {
 	minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
-	mappings "net.fabricmc:yarn:${rootProject.yarn_mappings}:v2"
+	mappings "net.legacyfabric:yarn:${rootProject.yarn_mappings}:v2"
 
 	forge "net.minecraftforge:forge:${rootProject.forge_version}"
+	forgeRuntimeLibrary "org.apache.logging.log4j:log4j-core:2.0-beta9"
+	forgeRuntimeLibrary "org.apache.logging.log4j:log4j-api:2.0-beta9"
 
 	common(project(path: ":xplat", configuration: "namedElements")) { transitive = false }
 	shadowCommon(project(path: ":xplat", configuration: "transformProductionForge")) { transitive = false }
@@ -72,7 +75,7 @@ dependencies {
 processResources {
 	inputs.property "version", project.version
 
-	filesMatching("META-INF/mods.toml") {
+	filesMatching("mcmod.info") {
 		expand "version": project.version
 	}
 }
@@ -83,6 +86,17 @@ shadowJar {
 
 	configurations = [project.configurations.shadowCommon]
 	archiveClassifier = "dev-shadow"
+
+	manifest {
+		attributes (
+				'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
+				'MixinConfigs': "emi.mixins.json",
+
+				'ForceLoadAsMod': 'true',
+				'FMLCorePluginContainsFMLMod': 'true',
+				'FMLAT': 'accesstransformer.cfg',
+		)
+	}
 }
 
 remapJar {
@@ -111,7 +125,6 @@ def apiJar = tasks.register('apiJar', Jar, {
 	from zipTree(remapJar.flatMap { it.archiveFile })
 	include 'emi.mixins.json'
 	include 'emi-forge.mixins.json'
-	include 'emi.accesswidener'
 	include 'dev/emi/emi/api/**'
 	exclude 'dev/emi/emi/api/EmiRecipeHandler**'
 	exclude 'dev/emi/emi/api/stack/FluidEmiStack**'
@@ -123,6 +136,12 @@ def apiJar = tasks.register('apiJar', Jar, {
 
 tasks.named("build").configure {
 	dependsOn(filteredSourcesJar, apiJar)
+}
+
+tasks.named("runClient").configure {
+	javaLauncher = javaToolchains.launcherFor {
+		languageVersion = JavaLanguageVersion.of(8)
+	}
 }
 
 components.java {

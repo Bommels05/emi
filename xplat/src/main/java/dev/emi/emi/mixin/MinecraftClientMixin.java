@@ -1,14 +1,17 @@
 package dev.emi.emi.mixin;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 
+import dev.emi.emi.screen.EmiScreenManager;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.util.Window;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import dev.emi.emi.platform.EmiClient;
 import dev.emi.emi.runtime.EmiLog;
@@ -18,26 +21,20 @@ import net.minecraft.client.world.ClientWorld;
 
 @Mixin(MinecraftClient.class)
 public class MinecraftClientMixin {
-	@Shadow
-	public ClientWorld world;
 
-	@Inject(at = @At("RETURN"), method = "reloadResources(Z)Ljava/util/concurrent/CompletableFuture;")
-	private void reloadResources(boolean force, CallbackInfoReturnable<CompletableFuture<Void>> info) {
-		CompletableFuture<Void> future = info.getReturnValue();
-		if (future != null) {
-			future.thenRunAsync(() -> {
+	@Inject(at = @At("HEAD"), method = "connect(Lnet/minecraft/client/world/ClientWorld;Ljava/lang/String;)V")
+	private void connect(ClientWorld world, String loadingMessage, CallbackInfo ci) {
+		if (world == null) {
+			EmiLog.info("Disconnecting from server, EMI data cleared");
+			//EmiReloadManager.clear();
+			EmiClient.onServer = false;
+		} else {
+			Executors.newFixedThreadPool(1).submit(() -> {
 				MinecraftClient client = MinecraftClient.getInstance();
-				if (client.world != null && client.world.getRecipeManager() != null) {
-					EmiReloadManager.reload();
+				if (client.world != null) {
+					//EmiReloadManager.reload();
 				}
-			}, Executors.newFixedThreadPool(1));
+			});
 		}
-	}
-
-	@Inject(at = @At("HEAD"), method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V")
-	private void disconnect(CallbackInfo info) {
-		EmiLog.info("Disconnecting from server, EMI data cleared");
-		EmiReloadManager.clear();
-		EmiClient.onServer = false;
 	}
 }

@@ -1,6 +1,7 @@
 package dev.emi.emi.recipe;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -53,25 +54,32 @@ public class EmiBrewingRecipe implements EmiRecipe {
 
 	@Override
 	public int getDisplayWidth() {
-		return 120;
+		return 64;
 	}
 
 	@Override
 	public int getDisplayHeight() {
-		return 61;
+		return 55;
 	}
 
 	@Override
 	public void addWidgets(WidgetHolder widgets) {
-		widgets.addTexture(BACKGROUND, 0, 0, 103, 61, 16, 14);
-		widgets.addAnimatedTexture(BACKGROUND, 81, 2, 9, 28, 176, 0, 1000 * 20, false, false, false).tooltip((mx, my) -> {
+		widgets.addTexture(BACKGROUND, 0, 0, 64, 55, 55, 15);
+		widgets.addAnimatedTexture(BACKGROUND, 42, 0, 9, 28, 176, 0, 1000 * 20, false, false, false).tooltip((mx, my) -> {
 			return List.of(TooltipComponent.of(EmiPort.ordered(EmiPort.translatable("emi.cooking.time", 20))));
 		});
-		widgets.addAnimatedTexture(BACKGROUND, 47, 0, 12, 29, 185, 0, 700, false, true, false);
-		widgets.addTexture(BACKGROUND, 44, 30, 18, 4, 176, 29);
-		widgets.addSlot(BLAZE_POWDER, 0, 2).drawBack(false);
-		widgets.addSlot(input, 39, 36).drawBack(false);
-		widgets.addSlot(ingredient, 62, 2).drawBack(false);
-		widgets.addSlot(output, 85, 36).drawBack(false).recipeContext(this);
+		widgets.addAnimatedTexture(BACKGROUND, 10, -1, 12, 29, 185, 0, 700, false, true, false);
+		//widgets.addTexture(BACKGROUND, 44, 30, 18, 4, 176, 29);
+		//widgets.addSlot(BLAZE_POWDER, 0, 2).drawBack(false);
+		widgets.addSlot(input, 0, 30).drawBack(false);
+		widgets.addSlot(ingredient, 23, 1).drawBack(false);
+		widgets.addSlot(output, 46, 30).drawBack(false).recipeContext(this);
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof EmiBrewingRecipe that)) return false;
+		return Objects.equals(input, that.input) && Objects.equals(ingredient, that.ingredient) && Objects.equals(output, that.output) && Objects.equals(id, that.id);
 	}
 }

@@ -68,7 +68,7 @@ public class RecipeFillButtonWidget extends RecipeButtonWidget {
 	@Override
 	public boolean mouseClicked(int mouseX, int mouseY, int button) {
 		if (canFill) {
-			HandledScreen<?> hs = EmiApi.getHandledScreen();
+			HandledScreen hs = EmiApi.getHandledScreen();
 			if (hs != null && EmiRecipeFiller.performFill(recipe, hs, EmiCraftContext.Type.FILL_BUTTON, EmiCraftContext.Destination.NONE, EmiInput.isShiftDown() ? Integer.MAX_VALUE : 1)) {
 				this.playButtonSound();
 				return true;

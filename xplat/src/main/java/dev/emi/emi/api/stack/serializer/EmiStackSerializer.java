@@ -14,7 +14,7 @@ import dev.emi.emi.runtime.EmiLog;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.StringNbtReader;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.JsonHelper;
+import dev.emi.emi.backport.EmiJsonHelper;
 
 public interface EmiStackSerializer<T extends EmiStack> extends EmiIngredientSerializer<T> {
 	static final Pattern STACK_REGEX = Pattern.compile("^([\\w_\\-./]+):([\\w_\\-.]+):([\\w_\\-./]+)(\\{.*\\})?$");
@@ -28,7 +28,7 @@ public interface EmiStackSerializer<T extends EmiStack> extends EmiIngredientSer
 		long amount = 1;
 		float chance = 1;
 		EmiStack remainder = EmiStack.EMPTY;
-		if (JsonHelper.isString(element)) {
+		if (EmiJsonHelper.isString(element)) {
 			String s = element.getAsString();
 			Matcher m = STACK_REGEX.matcher(s);
 			if (m.matches()) {
@@ -37,11 +37,11 @@ public interface EmiStackSerializer<T extends EmiStack> extends EmiIngredientSer
 			}
 		} else if (element.isJsonObject()) {
 			JsonObject json = element.getAsJsonObject();
-			id = EmiPort.id(JsonHelper.getString(json, "id"));
-			nbt = JsonHelper.getString(json, "nbt", null);
-			amount = JsonHelper.getLong(json, "amount", 1);
-			chance = JsonHelper.getFloat(json, "chance", 1);
-			if (JsonHelper.hasElement(json, "remainder")) {
+			id = EmiPort.id(EmiJsonHelper.getString(json, "id"));
+			nbt = EmiJsonHelper.getString(json, "nbt", null);
+			amount = EmiJsonHelper.getLong(json, "amount", 1);
+			chance = EmiJsonHelper.getFloat(json, "chance", 1);
+			if (EmiJsonHelper.hasElement(json, "remainder")) {
 				EmiIngredient ing = EmiIngredientSerializer.getDeserialized(json.get("remainder"));
 				if (ing instanceof EmiStack stack) {
 					remainder = stack;
@@ -52,7 +52,7 @@ public interface EmiStackSerializer<T extends EmiStack> extends EmiIngredientSer
 			try {
 				NbtCompound nbtComp = null;
 				if (nbt != null) {
-					nbtComp = StringNbtReader.parse(nbt);
+					nbtComp = (NbtCompound) StringNbtReader.method_7377(nbt);
 				}
 				EmiStack stack = create(id, nbtComp, amount);
 				if (chance != 1) {
@@ -76,7 +76,7 @@ public interface EmiStackSerializer<T extends EmiStack> extends EmiIngredientSer
 		if (stack.getAmount() == 1 && stack.getChance() == 1 && stack.getRemainder().isEmpty()) {
 			String s = getType() + ":" + stack.getId();
 			if (stack.hasNbt()) {
-				s += stack.getNbt().asString();
+				s += stack.getNbt().toString();
 			}
 			return new JsonPrimitive(s);
 		} else {

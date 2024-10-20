@@ -90,7 +90,7 @@ public class EmiCraftingRecipe implements EmiRecipe {
 			if (s >= 0 && s < input.size()) {
 				widgets.addSlot(input.get(s), i % 3 * 18, i / 3 * 18);
 			} else {
-				widgets.addSlot(EmiStack.of(ItemStack.EMPTY), i % 3 * 18, i / 3 * 18);
+				widgets.addSlot(EmiStack.EMPTY, i % 3 * 18, i / 3 * 18);
 			}
 		}
 		widgets.addSlot(output, 92, 14).large(true).recipeContext(this);

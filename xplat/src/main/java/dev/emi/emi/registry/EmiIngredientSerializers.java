@@ -12,7 +12,7 @@ import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.serializer.EmiIngredientSerializer;
 import dev.emi.emi.runtime.EmiLog;
-import net.minecraft.util.JsonHelper;
+import dev.emi.emi.backport.EmiJsonHelper;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class EmiIngredientSerializers {
@@ -49,18 +49,18 @@ public class EmiIngredientSerializers {
 				if (type.equals("emi:item")) {
 					json.addProperty("type", "item");
 					if (!json.has("id")) {
-						json.addProperty("id", JsonHelper.getString(json, "item", ""));
+						json.addProperty("id", EmiJsonHelper.getString(json, "item", ""));
 					}
 				} else if (type.equals("emi:fluid")) {
 					json.addProperty("type", "fluid");
 					if (!json.has("id")) {
-						json.addProperty("id", JsonHelper.getString(json, "fluid", ""));
+						json.addProperty("id", EmiJsonHelper.getString(json, "fluid", ""));
 					}
 				} else if (type.equals("emi:item_tag")) {
 					json.addProperty("type", "tag");
 					json.addProperty("registry", "minecraft:item");
 					if (!json.has("id")) {
-						json.addProperty("id", JsonHelper.getString(json, "tag", ""));
+						json.addProperty("id", EmiJsonHelper.getString(json, "tag", ""));
 					}
 				}
 				type = json.get("type").getAsString();

@@ -1,6 +1,6 @@
 plugins {
 	id "architectury-plugin" version "3.4-SNAPSHOT"
-	id "dev.architectury.loom" version "1.4-SNAPSHOT" apply false
+	id "dev.architectury.loom" version "1.7.9999" apply false
 }
 
 architectury {
@@ -29,11 +29,39 @@ allprojects {
 		maven {
 			url = "https://maven.blamejared.com/"
 		}
+		maven {
+			url "https://repo.legacyfabric.net/repository/legacyfabric/"
+			content {
+				includeGroup("net.legacyfabric")
+				includeModule("net.fabricmc", "intermediary")
+			}
+		}
+		maven {
+			url "https://repo.spongepowered.org/maven/"
+			content {
+				includeGroup("org.scala-lang")
+			}
+			metadataSources {
+				artifact()
+			}
+		}
+		maven {
+			url "https://jitpack.io/"
+		}
+	}
+
+	dependencies {
+		annotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:0.4.2'
+		compileOnly 'com.github.bsideup.jabel:jabel-javac-plugin:0.4.2'
 	}
 
 	tasks.withType(JavaCompile).configureEach({
 		options.encoding = "UTF-8"
-		options.release = 17
+		sourceCompatibility = 16
+		options.release = 8
+		javaCompiler = javaToolchains.compilerFor {
+			languageVersion = JavaLanguageVersion.of(16)
+		}
 	})
 
 	java {

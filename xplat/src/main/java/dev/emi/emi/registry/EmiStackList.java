@@ -1,9 +1,6 @@
 package dev.emi.emi.registry;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -11,42 +8,37 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import dev.emi.emi.EmiPort;
-import dev.emi.emi.api.stack.Comparison;
 import dev.emi.emi.api.stack.EmiIngredient;
-import dev.emi.emi.api.stack.EmiRegistryAdapter;
 import dev.emi.emi.api.stack.EmiStack;
+import dev.emi.emi.backport.ItemKey;
+import dev.emi.emi.backport.TagKey;
 import dev.emi.emi.config.EmiConfig;
 import dev.emi.emi.config.IndexSource;
 import dev.emi.emi.data.EmiData;
 import dev.emi.emi.data.IndexStackData;
+import dev.emi.emi.mixin.accessor.BlockItemAccessor;
 import dev.emi.emi.runtime.EmiHidden;
 import dev.emi.emi.runtime.EmiLog;
-import it.unimi.dsi.fastutil.Hash;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenCustomHashMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
+import gnu.trove.map.hash.TCustomHashMap;
+import gnu.trove.set.hash.TCustomHashSet;
+import gnu.trove.strategy.HashingStrategy;
 import net.minecraft.block.Block;
-import net.minecraft.fluid.FlowableFluid;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.itemgroup.ItemGroup;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.tag.TagKey;
-import net.minecraft.util.collection.DefaultedList;
+import net.minecraftforge.fluids.Fluid;
 
 public class EmiStackList {
-	private static final TagKey<Item> ITEM_HIDDEN = TagKey.of(EmiPort.getItemRegistry().getKey(), EmiTags.HIDDEN_FROM_RECIPE_VIEWERS);
-	private static final TagKey<Block> BLOCK_HIDDEN = TagKey.of(EmiPort.getBlockRegistry().getKey(), EmiTags.HIDDEN_FROM_RECIPE_VIEWERS);
-	private static final TagKey<Fluid> FLUID_HIDDEN = TagKey.of(EmiPort.getFluidRegistry().getKey(), EmiTags.HIDDEN_FROM_RECIPE_VIEWERS);
+	private static final TagKey<ItemKey> ITEM_HIDDEN = TagKey.of(ItemKey.class, EmiTags.HIDDEN_FROM_RECIPE_VIEWERS);
+	private static final TagKey<Block> BLOCK_HIDDEN = TagKey.of(Block.class, EmiTags.HIDDEN_FROM_RECIPE_VIEWERS);
+	private static final TagKey<Fluid> FLUID_HIDDEN = TagKey.of(Fluid.class, EmiTags.HIDDEN_FROM_RECIPE_VIEWERS);
 	public static List<Predicate<EmiStack>> invalidators = Lists.newArrayList();
 	public static List<EmiStack> stacks = List.of();
 	public static List<EmiStack> filteredStacks = List.of();
-	private static Object2IntMap<EmiStack> strictIndices = new Object2IntOpenCustomHashMap<>(new StrictHashStrategy());
-	private static Object2IntMap<Object> keyIndices = new Object2IntOpenHashMap<>();
+	private static Map<EmiStack, Integer> strictIndices = new TCustomHashMap<>(new StrictHashStrategy());
+	private static Map<Object, Integer> keyIndices = new HashMap<>();
 
 	public static void clear() {
 		invalidators.clear();
@@ -59,7 +51,7 @@ public class EmiStackList {
 		List<IndexGroup> groups = Lists.newArrayList();
 		Map<String, IndexGroup> namespaceGroups = new LinkedHashMap<>();
 		Map<String, IndexGroup> creativeGroups = new LinkedHashMap<>();
-		for (Item item : EmiPort.getItemRegistry()) {
+		for (Item item : (Iterable<Item>) EmiPort.getItemRegistry()) {
 			String itemName = "null";
 			try {
 				itemName = item.toString();
@@ -70,13 +62,13 @@ public class EmiStackList {
 				EmiLog.error(e);
 			}
 		}
-		for (Item item : EmiPort.getItemRegistry()) {
+		for (Item item : (Iterable<Item>) EmiPort.getItemRegistry()) {
 			String itemName = "null";
 			try {
 				itemName = item.toString();
-				DefaultedList<ItemStack> itemStacks = DefaultedList.of();
-				item.appendStacks(ItemGroup.SEARCH, itemStacks);
-				List<EmiStack> stacks = itemStacks.stream().filter(s -> !s.isEmpty()).map(EmiStack::of).toList();
+				List<ItemStack> itemStacks = new ArrayList<>();
+				item.appendItemStacks(item, ItemGroup.SEARCH, itemStacks);
+				List<EmiStack> stacks = itemStacks.stream().filter(s -> s != null && s.getItem() != null).map(EmiStack::of).toList();
 				if (!stacks.isEmpty()) {
 					creativeGroups.computeIfAbsent(stacks.get(0).getId().getNamespace(), (k) -> new IndexGroup()).stacks.addAll(stacks);
 				}
@@ -101,14 +93,12 @@ public class EmiStackList {
 		}
 		groups.addAll(namespaceGroups.values());
 		IndexGroup fluidGroup = new IndexGroup();
-		for (Fluid fluid : EmiPort.getFluidRegistry()) {
+		for (Fluid fluid : EmiPort.getFluidRegistry().values()) {
 			String fluidName = null;
 			try {
 				fluidName = fluid.toString();
-				if (fluid.isStill(fluid.getDefaultState()) || (fluid instanceof FlowableFluid ff && ff.getStill() == Fluids.EMPTY)) {
-					EmiStack fs = EmiStack.of(fluid);
-					fluidGroup.stacks.add(fs);
-				}
+				EmiStack fs = EmiStack.of(fluid);
+				fluidGroup.stacks.add(fs);
 			} catch (Exception e) {
 				EmiLog.error("Fluid  " + fluidName + " threw while EMI was attempting to construct the index, stack may be missing.");
 				EmiLog.error(e);
@@ -116,7 +106,7 @@ public class EmiStackList {
 		}
 		groups.add(fluidGroup);
 
-		Set<EmiStack> added = new ObjectOpenCustomHashSet<>(new StrictHashStrategy());
+		Set<EmiStack> added = new TCustomHashSet<>(new StrictHashStrategy());
 		
 		stacks = Lists.newLinkedList();
 		for (IndexGroup group : groups) {
@@ -134,13 +124,18 @@ public class EmiStackList {
 	@SuppressWarnings({"deprecation", "unchecked"})
 	private static <T> boolean isHiddenFromRecipeViewers(T key) {
 		if (key instanceof Item i) {
-			if (i instanceof BlockItem bi && bi.getBlock().getDefaultState().isIn(BLOCK_HIDDEN)) {
-				return true;
-			} else if (i.getRegistryEntry().isIn(ITEM_HIDDEN)) {
+			if (i instanceof BlockItem bi && BLOCK_HIDDEN.contains(((BlockItemAccessor) bi).getBlock())) {
 				return true;
 			}
 		} else if (key instanceof Fluid f) {
-			if (f.isIn(FLUID_HIDDEN)) {
+			if (FLUID_HIDDEN.contains(f)) {
+				return true;
+			}
+		} else if (key instanceof ItemStack s) {
+			if (ITEM_HIDDEN.contains(ItemKey.of(s))) {
+				return true;
+			}
+			if (s.getItem() instanceof BlockItem bi && BLOCK_HIDDEN.contains(((BlockItemAccessor) bi).getBlock())) {
 				return true;
 			}
 		}
@@ -158,7 +153,7 @@ public class EmiStackList {
 						return true;
 					}
 				}
-				if (isHiddenFromRecipeViewers(s.getKey())) {
+				if (isHiddenFromRecipeViewers(s.getKey()) || isHiddenFromRecipeViewers(s.getItemStack())) {
 					return true;
 				}
 				return false;
@@ -260,7 +255,7 @@ public class EmiStackList {
 		}
 	}
 
-	public static class StrictHashStrategy implements Hash.Strategy<EmiStack> {
+	public static class StrictHashStrategy implements HashingStrategy<EmiStack> {
 
 		@Override
 		public boolean equals(EmiStack a, EmiStack b) {
@@ -275,7 +270,7 @@ public class EmiStackList {
 		}
 
 		@Override
-		public int hashCode(EmiStack stack) {
+		public int computeHashCode(EmiStack stack) {
 			if (stack != null) {
 				NbtCompound nbtCompound = stack.getNbt();
 				int i = 31 + stack.getKey().hashCode();
@@ -285,7 +280,7 @@ public class EmiStackList {
 		}
 	}
 
-	public static class ComparisonHashStrategy implements Hash.Strategy<EmiStack> {
+	public static class ComparisonHashStrategy implements HashingStrategy<EmiStack> {
 
 		@Override
 		public boolean equals(EmiStack a, EmiStack b) {
@@ -300,7 +295,7 @@ public class EmiStackList {
 		}
 
 		@Override
-		public int hashCode(EmiStack stack) {
+		public int computeHashCode(EmiStack stack) {
 			if (stack != null) {
 				int i = 31 + stack.getKey().hashCode();
 				return 31 * i + EmiComparisonDefaults.get(stack.getKey()).getHash(stack);

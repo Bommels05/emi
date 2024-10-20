@@ -5,18 +5,17 @@ import org.spongepowered.asm.mixin.Mixin;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.EmiStackConvertible;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemConvertible;
 
-@Mixin(ItemConvertible.class)
-public interface ItemConvertibleMixin extends EmiStackConvertible {
+@Mixin(Item.class)
+public class ItemMixin implements EmiStackConvertible {
 
 	@Override
-	default EmiStack emi() {
+    public EmiStack emi() {
 		return EmiStack.of((Item) (Object) this);
 	}
 
 	@Override
-	default EmiStack emi(long amount) {
+	public EmiStack emi(long amount) {
 		return EmiStack.of((Item) (Object) this, amount);
 	}
 }

@@ -1,12 +1,21 @@
 package dev.emi.emi.api.widget;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.FluidEmiStack;
 import dev.emi.emi.platform.EmiAgnos;
+import dev.emi.emi.screen.EmiScreenBase;
+import dev.emi.emi.screen.EmiScreenManager;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Texture;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.texture.SpriteAtlasTexture;
+import net.minecraft.client.texture.TextureUtil;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.fluid.Fluid;
 import net.minecraft.util.Identifier;
+import net.minecraftforge.fluids.Fluid;
+import org.lwjgl.opengl.GL11;
 
 public class TankWidget extends SlotWidget {
 	private final long capacity;
@@ -48,10 +57,13 @@ public class TankWidget extends SlotWidget {
 					int rh = Math.min(16, filledHeight - oy);
 					for (int ox = 0; ox < w; ox += 16) {
 						int rw = Math.min(16, w - ox);
+						Screen screen = MinecraftClient.getInstance().currentScreen;
+						RenderSystem.setShaderTexture(0, SpriteAtlasTexture.BLOCK_ATLAS_TEX);
+						Texture texture = fes.getKeyOfType(Fluid.class).getIcon();
 						if (floaty) {
-							EmiAgnos.renderFluid(fes, matrices, x + ox, sy + oy, delta, 0, 0, rw, rh);
+							screen.method_4944(x + ox, sy + oy, texture, rw, rh);
 						} else {
-							EmiAgnos.renderFluid(fes, matrices, x + ox, sy + (oy + rh) * -1, delta, 0, 16 - rh, rw, rh);
+							screen.method_4944( x + ox, sy + (oy + rh) * -1, texture, rw, rh);
 						}
 					}
 				}

@@ -9,11 +9,11 @@ import com.google.gson.JsonObject;
 
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.runtime.EmiLog;
-import net.minecraft.resource.Resource;
-import net.minecraft.resource.ResourceManager;
+import dev.emi.emi.backport.EmiResource;
+import dev.emi.emi.backport.EmiResourceManager;
 import net.minecraft.resource.SinglePreparationResourceReloader;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.JsonHelper;
+import dev.emi.emi.backport.EmiJsonHelper;
 import net.minecraft.util.profiler.Profiler;
 
 public class EmiDataLoader<T> extends SinglePreparationResourceReloader<T>
@@ -35,16 +35,16 @@ public class EmiDataLoader<T> extends SinglePreparationResourceReloader<T>
 	}
 
 	@Override
-	public T prepare(ResourceManager manager, Profiler profiler) {
+	public T prepare(EmiResourceManager manager, Profiler profiler) {
 		T t = baseSupplier.get();
 		for (Identifier id : EmiPort.findResources(manager, path, i -> i.endsWith(".json"))) {
 			if (!id.getNamespace().equals("emi")) {
 				continue;
 			}
-			for (Resource resource : manager.getAllResources(id)) {
+			for (EmiResource resource : manager.getAllResources(id)) {
 				try {
 					InputStreamReader reader = new InputStreamReader(EmiPort.getInputStream(resource));
-					JsonObject json = JsonHelper.deserialize(GSON, reader, JsonObject.class);
+					JsonObject json = EmiJsonHelper.deserialize(GSON, reader, JsonObject.class);
 					prepare.accept(t, json, id);
 				} catch (Exception e) {
 					EmiLog.error("Error loading data for " + this.id + " in " + id);
@@ -56,7 +56,7 @@ public class EmiDataLoader<T> extends SinglePreparationResourceReloader<T>
 	}
 
 	@Override
-	public void apply(T t, ResourceManager manager, Profiler profiler) {
+	public void apply(T t, EmiResourceManager manager, Profiler profiler) {
 		apply.accept(t);
 	}
 

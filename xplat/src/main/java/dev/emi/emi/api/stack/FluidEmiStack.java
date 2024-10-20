@@ -3,16 +3,19 @@ package dev.emi.emi.api.stack;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.texture.SpriteAtlasTexture;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidRegistry;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-import dev.emi.emi.EmiPort;
 import dev.emi.emi.api.render.EmiRender;
 import dev.emi.emi.api.render.EmiTooltipComponents;
 import dev.emi.emi.platform.EmiAgnos;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.fluid.Fluid;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -62,13 +65,14 @@ public class FluidEmiStack extends EmiStack {
 
 	@Override
 	public Identifier getId() {
-		return EmiPort.getFluidRegistry().getId(fluid);
+		return new Identifier(FluidRegistry.getFluidName(fluid));
 	}
 
 	@Override
 	public void render(MatrixStack matrices, int x, int y, float delta, int flags) {
 		if ((flags & RENDER_ICON) != 0) {
-			EmiAgnos.renderFluid(this, matrices, x, y, delta);
+			RenderSystem.setShaderTexture(0, SpriteAtlasTexture.BLOCK_ATLAS_TEX);
+			MinecraftClient.getInstance().currentScreen.method_4944(x, y, fluid.getIcon(), 16, 16);
 		}
 		if ((flags & RENDER_REMAINDER) != 0) {
 			EmiRender.renderRemainderIcon(this, matrices, x, y);
@@ -86,7 +90,7 @@ public class FluidEmiStack extends EmiStack {
 		if (amount > 1) {
 			list.add(EmiTooltipComponents.getAmount(this));
 		}
-		String namespace = EmiPort.getFluidRegistry().getId(fluid).getNamespace();
+		String namespace = getId().getNamespace();
 		EmiTooltipComponents.appendModName(list, namespace);
 		list.addAll(super.getTooltip());
 		return list;

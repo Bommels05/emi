@@ -1,6 +1,6 @@
 package dev.emi.emi.jemi.runtime;
 
-import java.util.Optional;
+/*import java.util.Optional;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -31,4 +31,4 @@ public class JemiBookmarkOverlay implements IBookmarkOverlay {
 		}
 		return null;
 	}
-}
+}*/

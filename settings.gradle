@@ -4,12 +4,13 @@ pluginManagement {
         maven { url "https://maven.architectury.dev/" }
         maven { url "https://maven.minecraftforge.net/" }
         gradlePluginPortal()
+        mavenLocal()
     }
 }
 
 include("xplat")
-include("xplat:mojmap")
-include("fabric")
+//include("xplat:mojmap")
+//include("fabric")
 include("forge")
 
 rootProject.name = "emi"

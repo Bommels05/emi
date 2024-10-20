@@ -1,6 +1,7 @@
 package dev.emi.emi.mixin.jei;
 
-import java.util.List;
+//todo NEI integration
+/*import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -41,4 +42,4 @@ public class PluginCallerMixin {
 		}
 		target.accept(plugin);
 	}
-}
+}*/

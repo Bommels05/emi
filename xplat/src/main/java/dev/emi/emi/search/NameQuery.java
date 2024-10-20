@@ -23,7 +23,7 @@ public class NameQuery extends Query {
 
 	@Override
 	public boolean matchesUnbaked(EmiStack stack) {
-		return getText(stack).getString().toLowerCase().contains(name);
+		return getText(stack).asUnformattedString().toLowerCase().contains(name);
 	}
 
 	public static Text getText(EmiStack stack) {

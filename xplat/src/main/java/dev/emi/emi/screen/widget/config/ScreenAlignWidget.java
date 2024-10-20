@@ -23,14 +23,14 @@ public class ScreenAlignWidget extends ConfigEntryWidget {
 				mutator.get().horizontal = (ScreenAlign.Horizontal) c;
 				mutator.set(mutator.get());
 			});
-		});
+		}, buttonManager);
 		vertical = EmiPort.newButton(0, 0, 106, 20, getVerticalText(), button -> {
 			EnumWidget.page(mutator.get().vertical, v -> true, c -> {
 				mutator.get().vertical = (ScreenAlign.Vertical) c;
 				mutator.set(mutator.get());
 			});
-		});
-		this.setChildren(List.of(horizontal, vertical));
+		}, buttonManager);
+		this.buttons.addAll(List.of(horizontal, vertical));
 	}
 
 	public Text getHorizontalText() {

@@ -14,17 +14,10 @@ import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.serializer.EmiIngredientSerializer;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.recipe.RecipeManager;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Identifier;
 
 public interface EmiRegistry {
-
-	/**
-	 * @return The vanilla recipe manager, for iterating recipe types.
-	 */
-	RecipeManager getRecipeManager();
 	
 	/**
 	 * Adds a recipe category.
@@ -92,7 +85,7 @@ public interface EmiRegistry {
 	}
 
 	/**
-	 * @deprecated Use {@link EmiPlugin#initialize()} and {@link EmiInitRegistry#addIngredientSerializer()}
+	 * @deprecated Use {@link EmiPlugin#initialize(EmiInitRegistry)} and {@link EmiInitRegistry#addIngredientSerializer(Class, EmiIngredientSerializer)}
 	 */
 	@Deprecated
 	<T extends EmiIngredient> void addIngredientSerializer(Class<T> clazz, EmiIngredientSerializer<T> serializer);
@@ -171,7 +164,7 @@ public interface EmiRegistry {
 	 * Adds a recipe handler to a specified type of screen handler.
 	 * Recipe handlers are responsible for filling recipes automatically.
 	 */
-	<T extends ScreenHandler> void addRecipeHandler(ScreenHandlerType<T> type, dev.emi.emi.api.recipe.handler.EmiRecipeHandler<T> handler);
+	<T extends ScreenHandler> void addRecipeHandler(Class<T> type, dev.emi.emi.api.recipe.handler.EmiRecipeHandler<T> handler);
 
 	/**
 	 * Adds a recipe decorator for all recipe categories.

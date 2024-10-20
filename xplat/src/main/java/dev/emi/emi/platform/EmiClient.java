@@ -1,10 +1,6 @@
 package dev.emi.emi.platform;
 
 import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-
-import com.google.common.collect.Maps;
 
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.recipe.handler.StandardRecipeHandler;
@@ -12,23 +8,20 @@ import dev.emi.emi.config.EmiConfig;
 import dev.emi.emi.network.EmiNetwork;
 import dev.emi.emi.network.FillRecipeC2SPacket;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.item.ItemConvertible;
+import net.minecraft.inventory.slot.Slot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsageContext;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
 
 public class EmiClient {
-	public static final Map<Consumer<ItemUsageContext>, List<ItemConvertible>> HOE_ACTIONS = Maps.newHashMap();
 	public static boolean onServer = false;
 
 	public static void init() {
 		EmiConfig.loadConfig();
 	}
 
-	public static <T extends ScreenHandler> void sendFillRecipe(StandardRecipeHandler<T> handler, HandledScreen<T> screen,
+	public static <T extends ScreenHandler> void sendFillRecipe(StandardRecipeHandler<T> handler, HandledScreen screen,
 			int syncId, int action, List<ItemStack> stacks, EmiRecipe recipe) {
-		T screenHandler = screen.getScreenHandler();
+		T screenHandler = (T) screen.screenHandler;
 		List<Slot> crafting = handler.getCraftingSlots(recipe, screenHandler);
 		Slot output = handler.getOutputSlot(screenHandler);
 		EmiNetwork.sendToServer(new FillRecipeC2SPacket(screenHandler, action, handler.getInputSources(screenHandler), crafting, output, stacks));

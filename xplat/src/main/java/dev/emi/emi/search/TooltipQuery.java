@@ -25,7 +25,7 @@ public class TooltipQuery extends Query {
 	@Override
 	public boolean matchesUnbaked(EmiStack stack) {
 		for (Text text : getText(stack)) {
-			if (text.getString().toLowerCase().contains(name)) {
+			if (text.asUnformattedString().toLowerCase().contains(name)) {
 				return true;
 			}
 		}

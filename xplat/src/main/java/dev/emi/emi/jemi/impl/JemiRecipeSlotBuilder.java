@@ -1,6 +1,6 @@
 package dev.emi.emi.jemi.impl;
 
-import java.util.List;
+/*import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -104,4 +104,4 @@ public class JemiRecipeSlotBuilder implements IRecipeSlotBuilder {
 		renderers.put(ingredientType, new IngredientRenderer<T>(ingredientType, ingredientRenderer));
 		return this;
 	}
-}
+}*/

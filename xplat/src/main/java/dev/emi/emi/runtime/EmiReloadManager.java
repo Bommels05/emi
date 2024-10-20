@@ -11,7 +11,6 @@ import dev.emi.emi.api.EmiInitRegistry;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.bom.BoM;
-import dev.emi.emi.jemi.JemiPlugin;
 import dev.emi.emi.platform.EmiAgnos;
 import dev.emi.emi.registry.EmiComparisonDefaults;
 import dev.emi.emi.registry.EmiDragDropHandlers;
@@ -27,7 +26,6 @@ import dev.emi.emi.registry.EmiStackProviders;
 import dev.emi.emi.registry.EmiTags;
 import dev.emi.emi.screen.EmiScreenManager;
 import dev.emi.emi.search.EmiSearch;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 
 public class EmiReloadManager {
@@ -96,7 +94,7 @@ public class EmiReloadManager {
 	}
 
 	public static void step(Text text, long worry) {
-		EmiLog.info(text.getString());
+		EmiLog.info(text.asUnformattedString());
 		reloadStep = text;
 		reloadWorry = System.currentTimeMillis() + worry;
 	}
@@ -137,17 +135,13 @@ public class EmiReloadManager {
 						clear = false;
 						continue;
 					}
-					MinecraftClient client = MinecraftClient.getInstance();
-					if (client.world.getRecipeManager() == null) {
-						EmiReloadLog.warn("Recipe Manager is null");
-						break;
-					}
 					List<EmiPluginContainer> plugins = Lists.newArrayList();
 					plugins.addAll(EmiAgnos.getPlugins().stream()
 						.sorted((a, b) -> Integer.compare(entrypointPriority(a), entrypointPriority(b))).toList());
 					
 					if (EmiAgnos.isModLoaded("jei")) {
-						plugins.add(new EmiPluginContainer(new JemiPlugin(), "jemi"));
+						//todo NEI Integration
+						//plugins.add(new EmiPluginContainer(new JemiPlugin(), "jemi"));
 					}
 					EmiInitRegistry initRegistry = new EmiInitRegistryImpl();
 					for (EmiPluginContainer container : plugins) {

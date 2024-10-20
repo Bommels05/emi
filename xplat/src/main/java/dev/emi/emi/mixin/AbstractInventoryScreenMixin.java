@@ -4,8 +4,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import net.minecraft.client.gui.screen.ingame.InventoryScreen;
+import net.minecraft.client.resource.language.I18n;
+import net.minecraft.entity.effect.StatusEffect;
+import org.lwjgl.input.Mouse;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -19,52 +22,77 @@ import dev.emi.emi.config.EffectLocation;
 import dev.emi.emi.config.EmiConfig;
 import dev.emi.emi.platform.EmiAgnos;
 import dev.emi.emi.runtime.EmiDrawContext;
-import net.minecraft.client.gui.screen.ingame.AbstractInventoryScreen;
 import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffectUtil;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.text.Text;
 
-@Mixin(AbstractInventoryScreen.class)
-public abstract class AbstractInventoryScreenMixin<T extends ScreenHandler> extends HandledScreen<T> {
+@Mixin(InventoryScreen.class)
+public abstract class AbstractInventoryScreenMixin extends HandledScreen {
 	@Unique
 	private static boolean hasInventoryTabs = EmiAgnos.isModLoaded("inventorytabs");
 	
-	private AbstractInventoryScreenMixin() { super(null, null, null); }
+	private AbstractInventoryScreenMixin() { super(null); }
 
-	@Shadow
-	private Text getStatusEffectDescription(StatusEffectInstance effect) {
-		throw new UnsupportedOperationException();
+	private String getStatusEffectDescription(StatusEffectInstance effectInstance) {
+		return getEffectName(effectInstance, StatusEffect.STATUS_EFFECTS[effectInstance.getEffectId()]);
 	}
 
-	@Shadow
 	private void drawStatusEffectBackgrounds(MatrixStack matrices, int x, int height, Iterable<StatusEffectInstance> statusEffects, boolean wide) {
-		throw new UnsupportedOperationException();
-	}
-	
-	@Shadow
-	private void drawStatusEffectSprites(MatrixStack matrices, int x, int height, Iterable<StatusEffectInstance> statusEffects, boolean wide) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Shadow
-	private void drawStatusEffectDescriptions(MatrixStack matrices, int x, int height, Iterable<StatusEffectInstance> statusEffects) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Inject(at = @At(value = "INVOKE",
-			target = "net/minecraft/client/gui/screen/ingame/AbstractInventoryScreen.drawStatusEffectBackgrounds(Lnet/minecraft/client/util/math/MatrixStack;IILjava/lang/Iterable;Z)V"),
-		method = "drawStatusEffects")
-	private void drawStatusEffects(MatrixStack matrices, int mouseX, int mouseY, CallbackInfo info) {
-		if (EmiConfig.effectLocation == EffectLocation.TOP) {
-			emi$drawCenteredEffects(matrices, mouseX, mouseY);
+		int y = this.y;
+		this.client.getTextureManager().bindTexture(INVENTORY_TEXTURE);
+		for (StatusEffectInstance effectInstance : statusEffects) {
+			this.drawTexture(x, y, 0, 166, 140, 32);
+			y += height;
 		}
 	}
 
-	@ModifyVariable(at = @At(value = "INVOKE", target = "java/util/Collection.size()I", ordinal = 0),
+	private void drawStatusEffectSprites(MatrixStack matrices, int x, int height, Iterable<StatusEffectInstance> statusEffects, boolean wide) {
+		int y = this.y + 7;
+		for (StatusEffectInstance effectInstance : statusEffects) {
+			StatusEffect effect = StatusEffect.STATUS_EFFECTS[effectInstance.getEffectId()];
+			if (effect.hasIcon()) {
+				int iconLevel = effect.getIconLevel();
+				this.drawTexture(x, y, 0 + iconLevel % 8 * 18, 198 + iconLevel / 8 * 18, 18, 18);
+			}
+			y += height;
+		}
+	}
+
+	private void drawStatusEffectDescriptions(MatrixStack matrices, int x, int height, Iterable<StatusEffectInstance> statusEffects) {
+		int y = this.y + 6;
+		for (StatusEffectInstance effectInstance : statusEffects) {
+			StatusEffect effect = StatusEffect.STATUS_EFFECTS[effectInstance.getEffectId()];
+			String name = getEffectName(effectInstance, effect);
+			this.textRenderer.method_956(name, x, y, 16777215);
+			String var10 = StatusEffect.getFormattedDuration(effectInstance);
+			this.textRenderer.method_956(var10, x, y + 4, 8355711);
+			y += height;
+		}
+	}
+
+	private static String getEffectName(StatusEffectInstance effectInstance, StatusEffect effect) {
+		String name = I18n.translate(effect.getTranslationKey());
+		if (effectInstance.getAmplifier() == 1) {
+			name = name + " " + I18n.translate("enchantment.level.2");
+		} else if (effectInstance.getAmplifier() == 2) {
+			name = name + " " + I18n.translate("enchantment.level.3");
+		} else if (effectInstance.getAmplifier() == 3) {
+			name = name + " " + I18n.translate("enchantment.level.4");
+		}
+		return name;
+	}
+
+	@Inject(at = @At(value = "INVOKE",
+			target = "Lnet/minecraft/entity/player/ControllablePlayerEntity;getStatusEffectInstances()Ljava/util/Collection;"),
+		method = "drawStatusEffects")
+	private void drawStatusEffects(CallbackInfo info) {
+		if (EmiConfig.effectLocation == EffectLocation.TOP) {
+			emi$drawCenteredEffects(MatrixStack.INSTANCE, Mouse.getX(), Mouse.getY());
+		}
+	}
+
+	@ModifyVariable(at = @At(value = "INVOKE", target = "Ljava/util/Collection;isEmpty()Z"),
 		method = "drawStatusEffects", ordinal = 0)
 	private Collection<StatusEffectInstance> drawStatusEffects(Collection<StatusEffectInstance> original) {
 		if (EmiConfig.effectLocation == EffectLocation.TOP) {
@@ -73,10 +101,11 @@ public abstract class AbstractInventoryScreenMixin<T extends ScreenHandler> exte
 		return original;
 	}
 
+	//todo fix compressed/wide
 	private void emi$drawCenteredEffects(MatrixStack raw, int mouseX, int mouseY) {
 		EmiDrawContext context = EmiDrawContext.wrap(raw);
 		context.resetColor();
-		Collection<StatusEffectInstance> effects = Ordering.natural().sortedCopy(this.client.player.getStatusEffects());
+		Collection<StatusEffectInstance> effects = Ordering.natural().sortedCopy(this.client.field_3805.getStatusEffectInstances());
 		int size = effects.size();
 		if (size == 0) {
 			return;
@@ -118,17 +147,18 @@ public abstract class AbstractInventoryScreenMixin<T extends ScreenHandler> exte
 			this.y = restoreY;
 		}
 		if (hovered != null && size > 1) {
-			List<Text> list = List.of(this.getStatusEffectDescription(hovered),
-				EmiPort.literal(StatusEffectUtil.durationToString(hovered, 1.0f)));
-			this.renderTooltip(context.raw(), list, Optional.empty(), mouseX, Math.max(mouseY, 16));
+			List<String> list = List.of(this.getStatusEffectDescription(hovered),
+				StatusEffect.getFormattedDuration(hovered));
+			this.renderTooltip(list, mouseX, Math.max(mouseY, 16));
 		}
 	}
-	
-	@ModifyVariable(at = @At(value = "STORE", ordinal = 0),
+
+	//todo fix
+	/*@ModifyVariable(at = @At(value = "STORE", ordinal = 0),
 		method = "drawStatusEffects", ordinal = 0)
 	private boolean squishEffects(boolean original) {
 		return !EmiConfig.effectLocation.compressed;
-	}
+	}*/
 
 	@ModifyVariable(at = @At(value = "STORE", ordinal = 0),
 		method = "drawStatusEffects", ordinal = 2)

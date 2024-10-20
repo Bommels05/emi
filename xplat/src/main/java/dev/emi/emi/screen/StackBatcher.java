@@ -1,7 +1,6 @@
 package dev.emi.emi.screen;
 
-
-import java.lang.invoke.MethodHandle;
+/*import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
@@ -41,7 +40,7 @@ import net.minecraft.util.math.Matrix4f;
 /**
  * @author Una "unascribed" Thompson
  */
-public class StackBatcher {
+/*public class StackBatcher {
 	private static MethodHandle sodiumSpriteHandle;
 	private static boolean isIncompatibleSodiumLoaded;
 
@@ -278,7 +277,7 @@ public class StackBatcher {
 	 * This class is mostly a copy of a 1.18.2 implementation of VertexConsumerProvider.Immediate
 	 * The reimplementation allows compatibility with shader mods, as well as less hackery.
 	 */
-	private static class BatcherVertexConsumerProvider implements VertexConsumerProvider {
+	/*private static class BatcherVertexConsumerProvider implements VertexConsumerProvider {
 		protected final BufferBuilder fallbackBuffer;
 		protected final Map<RenderLayer, BufferBuilder> layerBuffers;
 		protected Optional<RenderLayer> currentLayer = Optional.empty();
@@ -420,4 +419,4 @@ public class StackBatcher {
 		}
 	}
 
-}
+}*/

@@ -1,8 +1,17 @@
 package dev.emi.emi.api.stack;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
+import net.minecraft.block.Block;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.Item;
+import net.minecraft.item.itemgroup.ItemGroup;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.oredict.OreDictionary;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Lists;
@@ -11,10 +20,6 @@ import dev.emi.emi.EmiPort;
 import dev.emi.emi.registry.EmiComparisonDefaults;
 import dev.emi.emi.screen.tooltip.RemainderTooltipComponent;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.fluid.FlowableFluid;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.item.ItemConvertible;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
@@ -100,7 +105,7 @@ public abstract class EmiStack implements EmiIngredient {
 	public abstract Identifier getId();
 
 	public ItemStack getItemStack() {
-		return ItemStack.EMPTY;
+		return null;
 	}
 
 	public boolean isEqual(EmiStack stack) {
@@ -158,33 +163,81 @@ public abstract class EmiStack implements EmiIngredient {
 	}
 
 	public static EmiStack of(ItemStack stack) {
-		if (stack.isEmpty()) {
+		if (stack == null || stack.getItem() == null) {
 			return EmiStack.EMPTY;
 		}
 		return new ItemEmiStack(stack);
 	}
 
 	public static EmiStack of(ItemStack stack, long amount) {
-		if (stack.isEmpty()) {
+		if (stack == null || stack.getItem() == null) {
 			return EmiStack.EMPTY;
 		}
 		return new ItemEmiStack(stack, amount);
 	}
 
-	public static EmiStack of(ItemConvertible item) {
-		return of(item.asItem().getDefaultStack(), 1);
+	public static EmiIngredient ofPotentialTag(ItemStack stack) {
+		if (stack == null || stack.getItem() == null) {
+			return EmiStack.EMPTY;
+		}
+		return fromPotentialTag(stack, stack.count);
 	}
 
-	public static EmiStack of(ItemConvertible item, long amount) {
-		return of(item.asItem().getDefaultStack(), amount);
+	public static EmiIngredient ofPotentialTag(ItemStack stack, long amount) {
+		if (stack == null || stack.getItem() == null) {
+			return EmiStack.EMPTY;
+		}
+		return fromPotentialTag(stack, amount);
 	}
 
-	public static EmiStack of(ItemConvertible item, NbtCompound nbt) {
-		return of(item, nbt, 1);
+	private static EmiIngredient fromPotentialTag(ItemStack stack, long amount) {
+		if (stack.getData() == OreDictionary.WILDCARD_VALUE) {
+			List<ItemStack> stacks = new ArrayList<>();
+			stack.getItem().appendItemStacks(stack.getItem(), ItemGroup.MISC, stacks);
+			return EmiIngredient.of(stacks.stream().map(EmiStack::of).toList());
+		} else {
+			return new ItemEmiStack(stack, amount);
+		}
 	}
 
-	public static EmiStack of(ItemConvertible item, NbtCompound nbt, long amount) {
-		return new ItemEmiStack(item.asItem(), nbt, amount);
+	public static EmiStack of(Block block) {
+		return of(new ItemStack(block), 1);
+	}
+
+	public static EmiStack of(Block block, long amount) {
+		return of(new ItemStack(block), amount);
+	}
+
+	public static EmiStack of(Block block, long amount, int meta) {
+		return of(new ItemStack(block, 1, meta), amount);
+	}
+
+	public static EmiStack of(Item item) {
+		return of(new ItemStack(item), 1);
+	}
+
+	public static EmiStack of(Item item, long amount) {
+		return of(new ItemStack(item), amount);
+	}
+
+	public static EmiStack of(Item item, long amount, int meta) {
+		return of(new ItemStack(item, 1, meta), amount);
+	}
+
+	public static EmiStack of(Item item, NbtCompound nbt) {
+		return of(item, nbt, 1, 0);
+	}
+
+	public static EmiStack of(Item item, NbtCompound nbt, long amount) {
+		return new ItemEmiStack(item, nbt, amount, 0);
+	}
+
+	public static EmiStack of(Item item, NbtCompound nbt, long amount, int meta) {
+		return new ItemEmiStack(item, nbt, amount, meta);
+	}
+
+	public static EmiStack of(FluidStack stack) {
+		return of(stack.getFluid(), stack.tag, stack.amount);
 	}
 
 	public static EmiStack of(Fluid fluid) {
@@ -200,10 +253,7 @@ public abstract class EmiStack implements EmiIngredient {
 	}
 
 	public static EmiStack of(Fluid fluid, NbtCompound nbt, long amount) {
-		if (fluid instanceof FlowableFluid ff && ff.getStill() != Fluids.EMPTY) {
-			fluid = ff.getStill();
-		}
-		if (fluid == Fluids.EMPTY) {
+		if (fluid == null) {
 			return EmiStack.EMPTY;
 		}
 		return new FluidEmiStack(fluid, nbt, amount);

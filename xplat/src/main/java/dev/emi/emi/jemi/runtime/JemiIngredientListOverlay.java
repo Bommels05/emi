@@ -1,6 +1,6 @@
 package dev.emi.emi.jemi.runtime;
 
-import java.util.List;
+/*import java.util.List;
 import java.util.Optional;
 
 import org.jetbrains.annotations.Nullable;
@@ -58,4 +58,4 @@ public class JemiIngredientListOverlay implements IIngredientListOverlay {
 		return List.of();
 	}
 	
-}
+}*/

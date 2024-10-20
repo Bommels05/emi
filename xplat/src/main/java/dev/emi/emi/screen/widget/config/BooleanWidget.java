@@ -20,9 +20,9 @@ public class BooleanWidget extends ConfigEntryWidget {
 
 		button = EmiPort.newButton(0, 0, 150, 20, getText(), button -> {
 			mutator.set(!mutator.get());
-			button.setMessage(getText());
-		});
-		this.setChildren(List.of(button));
+			button.message = getText().asFormattedString();
+		}, buttonManager);
+		this.buttons.addAll(List.of(button));
 	}
 
 	public Text getText() {

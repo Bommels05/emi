@@ -1,6 +1,6 @@
 package dev.emi.emi.recipe;
 
-import java.util.List;
+/*import java.util.List;
 
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.api.recipe.EmiRecipe;
@@ -60,4 +60,4 @@ public class EmiStonecuttingRecipe implements EmiRecipe {
 		widgets.addSlot(input, 0, 0);
 		widgets.addSlot(output, 58, 0).recipeContext(this);
 	}
-}
+}*/

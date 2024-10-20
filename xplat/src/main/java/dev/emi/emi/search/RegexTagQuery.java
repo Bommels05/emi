@@ -1,5 +1,6 @@
 package dev.emi.emi.search;
 
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -7,6 +8,7 @@ import java.util.stream.Stream;
 
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.api.stack.EmiStack;
+import dev.emi.emi.backport.TagKey;
 import dev.emi.emi.registry.EmiTags;
 
 public class RegexTagQuery extends Query {
@@ -22,10 +24,9 @@ public class RegexTagQuery extends Query {
 			valid = Set.of();
 		} else {
 			final Pattern pat = p;
-			valid = Stream.concat(
-				EmiPort.getItemRegistry().streamTags().filter(t -> {
+			valid = TagKey.Type.ITEM.getAll().stream().filter(t -> {
 					if (EmiTags.hasTranslation(t)) {
-						if (pat.matcher(EmiTags.getTagName(t).getString().toLowerCase()).find()) {
+						if (pat.matcher(EmiTags.getTagName(t).asUnformattedString().toLowerCase()).find()) {
 							return true;
 						}
 					}
@@ -33,12 +34,7 @@ public class RegexTagQuery extends Query {
 						return true;
 					}
 					return false;
-				}).map(t -> EmiPort.getItemRegistry().getEntryList(t)), EmiPort.getBlockRegistry().streamTags().filter(t -> {
-					if (pat.matcher(t.id().toString()).find()) {
-						return true;
-					}
-					return false;
-				}).map(t -> EmiPort.getBlockRegistry().getEntryList(t))).flatMap(v -> v.stream()).collect(Collectors.toSet());
+				}).map(TagKey::getAll).flatMap(v -> v.stream()).collect(Collectors.toSet());
 		}
 	}
 

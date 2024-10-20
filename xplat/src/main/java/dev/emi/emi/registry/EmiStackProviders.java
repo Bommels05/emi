@@ -2,6 +2,7 @@ package dev.emi.emi.registry;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -17,11 +18,12 @@ import dev.emi.emi.mixin.accessor.HandledScreenAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.inventory.CraftingInventory;
+import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.slot.CraftingResultSlot;
+import net.minecraft.inventory.slot.Slot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.CraftingRecipe;
+import net.minecraft.recipe.RecipeDispatcher;
 import net.minecraft.recipe.RecipeType;
-import net.minecraft.screen.slot.CraftingResultSlot;
-import net.minecraft.screen.slot.Slot;
 import net.minecraft.util.Identifier;
 
 public class EmiStackProviders {
@@ -53,19 +55,22 @@ public class EmiStackProviders {
 			Slot s = handled.getFocusedSlot();
 			if (s != null) {
 				ItemStack stack = s.getStack();
-				if (!stack.isEmpty()) {
+				if (stack != null) {
 					if (s instanceof CraftingResultSlot craf) {
 						// Emi be making assumptions
 						try {
-							CraftingInventory inv = ((CraftingResultSlotAccessor) craf).getInput();
-							MinecraftClient client = MinecraftClient.getInstance();
-							List<CraftingRecipe> list
-								= client.world.getRecipeManager().getAllMatches(RecipeType.CRAFTING, inv, client.world);
-							if (!list.isEmpty()) {
-								Identifier id = EmiPort.getId(list.get(0));
-								EmiRecipe recipe = EmiApi.getRecipeManager().getRecipe(id);
-								if (recipe != null) {
-									return new EmiStackInteraction(EmiStack.of(stack), recipe, false);
+							Inventory inv = ((CraftingResultSlotAccessor) craf).getInput();
+							if (inv instanceof CraftingInventory) {
+								MinecraftClient client = MinecraftClient.getInstance();
+								List<RecipeType> list = ((List<RecipeType>) RecipeDispatcher.getInstance().getAllRecipes()).stream().filter(
+										recipe -> recipe.matches((CraftingInventory) inv, client.world)
+								).collect(Collectors.toList());
+								if (!list.isEmpty()) {
+									Identifier id = EmiPort.getId(list.get(0));
+									EmiRecipe recipe = EmiApi.getRecipeManager().getRecipe(id);
+									if (recipe != null) {
+										return new EmiStackInteraction(EmiStack.of(stack), recipe, false);
+									}
 								}
 							}
 						} catch (Exception e) {

@@ -1,6 +1,6 @@
 package dev.emi.emi.recipe;
 
-import java.util.List;
+/*import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -72,4 +72,4 @@ public class EmiCompostingRecipe implements EmiRecipe {
 		widgets.addText(EmiPort.literal("x7"), 74, 5, -1, true);
 		widgets.addSlot(BONE_MEAL, 90, 0).recipeContext(this);
 	}
-}
+}*/

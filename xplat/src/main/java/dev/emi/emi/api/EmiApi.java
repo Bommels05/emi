@@ -34,7 +34,7 @@ import dev.emi.emi.screen.RecipeScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
+import net.minecraft.client.gui.screen.ingame.SurvivalInventoryScreen;
 
 public class EmiApi {
 	private static final MinecraftClient client = MinecraftClient.getInstance();
@@ -99,9 +99,9 @@ public class EmiApi {
 		return null;
 	}
 
-	public static HandledScreen<?> getHandledScreen() {
+	public static HandledScreen getHandledScreen() {
 		Screen s = client.currentScreen;
-		if (s instanceof HandledScreen<?> hs) {
+		if (s instanceof HandledScreen hs) {
 			return hs;
 		} else if (s instanceof RecipeScreen rs) {
 			return rs.old;
@@ -157,10 +157,10 @@ public class EmiApi {
 
 	public static void viewRecipeTree() {
 		if (client.currentScreen == null) {
-			client.setScreen(new InventoryScreen(client.player));
+			client.setScreen(new SurvivalInventoryScreen(client.field_3805));
 		}
 		Screen s = client.currentScreen;
-		if (s instanceof HandledScreen<?> hs) {
+		if (s instanceof HandledScreen hs) {
 			push();
 			client.setScreen(new BoMScreen(hs));
 		} else if (s instanceof RecipeScreen rs) {
@@ -240,9 +240,9 @@ public class EmiApi {
 		if (!recipes.isEmpty()) {
 			EmiSidebars.lookup(stack);
 			if (getHandledScreen() == null) {
-				client.setScreen(new InventoryScreen(client.player));
+				client.setScreen(new SurvivalInventoryScreen(client.field_3805));
 			}
-			if (client.currentScreen instanceof HandledScreen<?> hs) {
+			if (client.currentScreen instanceof HandledScreen hs) {
 				push();
 				client.setScreen(new RecipeScreen(hs, recipes));
 			} else if (client.currentScreen instanceof BoMScreen bs) {

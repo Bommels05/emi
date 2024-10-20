@@ -1,6 +1,6 @@
 package dev.emi.emi.jemi.widget;
 
-import java.util.List;
+/*import java.util.List;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -53,4 +53,4 @@ public class JemiTankWidget extends TankWidget {
 	public List<TooltipComponent> getTooltip(int mouseX, int mouseY) {
 		return jsw.getTooltip(mouseX, mouseY);
 	}
-}
+}*/

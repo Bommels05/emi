@@ -7,10 +7,10 @@ import com.google.common.collect.Lists;
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.recipe.handler.StandardRecipeHandler;
-import net.minecraft.screen.AbstractFurnaceScreenHandler;
-import net.minecraft.screen.slot.Slot;
+import net.minecraft.inventory.slot.Slot;
+import net.minecraft.screen.FurnaceScreenHandler;
 
-public class CookingRecipeHandler<T extends AbstractFurnaceScreenHandler> implements StandardRecipeHandler<T> {
+public class CookingRecipeHandler<T extends FurnaceScreenHandler> implements StandardRecipeHandler<T> {
 	private final EmiRecipeCategory category;
 
 	public CookingRecipeHandler(EmiRecipeCategory category) {
@@ -30,7 +30,7 @@ public class CookingRecipeHandler<T extends AbstractFurnaceScreenHandler> implem
 	
 	@Override
 	public List<Slot> getCraftingSlots(T handler) {
-		return List.of(handler.slots.get(0));
+		return List.of(handler.getSlot(0));
 	}
 
 	@Override

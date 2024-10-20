@@ -11,7 +11,7 @@ import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.DrawableWidget.DrawableWidgetConsumer;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.text.OrderedText;
+import dev.emi.emi.backport.OrderedText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -55,7 +55,7 @@ public interface WidgetHolder {
 	}
 
 	default TextWidget addText(Text text, int x, int y, int color, boolean shadow) {
-		return addText(text.asOrderedText(), x, y, color, shadow);
+		return addText(OrderedText.of(text), x, y, color, shadow);
 	}
 
 	default TextWidget addText(OrderedText text, int x, int y, int color, boolean shadow) {
@@ -81,7 +81,7 @@ public interface WidgetHolder {
 	}
 
 	default TooltipWidget addTooltipText(List<Text> tooltip, int x, int y, int width, int height) {
-		return addTooltip(tooltip.stream().map(Text::asOrderedText).map(TooltipComponent::of).toList(), x, y, width, height);
+		return addTooltip(tooltip.stream().map(OrderedText::of).map(TooltipComponent::of).toList(), x, y, width, height);
 	}
 
 	/**

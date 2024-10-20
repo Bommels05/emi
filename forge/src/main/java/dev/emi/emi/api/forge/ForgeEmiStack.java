@@ -6,6 +6,6 @@ import net.minecraftforge.fluids.FluidStack;
 public final class ForgeEmiStack {
 	
 	public static EmiStack of(FluidStack stack) {
-		return EmiStack.of(stack.getFluid(), stack.getTag(), stack.getAmount());
+		return EmiStack.of(stack.getFluid(), stack.tag, stack.amount);
 	}
 }

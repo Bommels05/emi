@@ -6,17 +6,19 @@ import java.util.stream.Stream;
 
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.api.stack.EmiStack;
+import dev.emi.emi.backport.TagKey;
 import dev.emi.emi.registry.EmiTags;
+import net.minecraft.block.Block;
+import net.minecraft.item.Item;
 
 public class TagQuery extends Query {
 	private final Set<Object> valid;
 
 	public TagQuery(String name) {
 		String lowerName = name.toLowerCase();
-		valid = Stream.concat(
-			EmiPort.getItemRegistry().streamTags().filter(t -> {
+		valid = TagKey.Type.ITEM.getAll().stream().filter(t -> {
 				if (EmiTags.hasTranslation(t)) {
-					if (EmiTags.getTagName(t).getString().toLowerCase().contains(lowerName)) {
+					if (EmiTags.getTagName(t).asUnformattedString().toLowerCase().contains(lowerName)) {
 						return true;
 					}
 				}
@@ -24,12 +26,7 @@ public class TagQuery extends Query {
 					return true;
 				}
 				return false;
-			}).map(t -> EmiPort.getItemRegistry().getEntryList(t)), EmiPort.getBlockRegistry().streamTags().filter(t -> {
-				if (t.id().toString().contains(lowerName)) {
-					return true;
-				}
-				return false;
-			}).map(t -> EmiPort.getBlockRegistry().getEntryList(t))).flatMap(v -> v.get().stream().map(e -> e.value().asItem())).collect(Collectors.toSet());
+			}).map(TagKey::getAll).flatMap(v -> v.stream()).collect(Collectors.toSet());
 	}
 
 	@Override

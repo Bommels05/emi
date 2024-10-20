@@ -12,16 +12,13 @@ public class SidebarButtonWidget extends SizedButtonWidget {
 	public SidebarButtonWidget(int x, int y, int width, int height, SidebarPanel panel) {
 		super(x, y, width, height, 0, 0, () -> {
 			return panel.pages.pages.size() > 0;
-		}, null, () -> 0, () -> {
+		}, w -> {
+			panel.cycleType(EmiInput.isShiftDown() ? -1 : 1);
+		}, panel.buttonManager, () -> 0, () -> {
 			return List.of(panel.getType().getText());
 		});
 		this.panel = panel;
 		texture = EmiRenderHelper.WIDGETS;
-	}
-
-	@Override
-	public void onPress() {
-		panel.cycleType(EmiInput.isShiftDown() ? -1 : 1);
 	}
 
 	@Override

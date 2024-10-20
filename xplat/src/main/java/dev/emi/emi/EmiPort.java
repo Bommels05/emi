@@ -1,98 +1,102 @@
 package dev.emi.emi;
 
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import org.jetbrains.annotations.Nullable;
-import com.mojang.blaze3d.systems.RenderSystem;
+import cpw.mods.fml.common.registry.FMLControlledNamespacedRegistry;
+import cpw.mods.fml.common.registry.GameData;
+import dev.emi.emi.backport.*;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.util.Window;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.TranslatableText;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidRegistry;
 
 import dev.emi.emi.api.stack.Comparison;
-import dev.emi.emi.registry.EmiRecipes;
 import net.minecraft.block.Block;
-import net.minecraft.block.TallFlowerBlock;
-import net.minecraft.block.entity.BannerPattern;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.VertexBuffer;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ButtonWidget.PressAction;
 import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.render.model.BakedQuad;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.fluid.Fluid;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.potion.Potion;
-import net.minecraft.potion.PotionUtil;
-import net.minecraft.recipe.Recipe;
-import net.minecraft.recipe.RecipeManager;
-import net.minecraft.resource.Resource;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.OrderedText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import net.minecraft.util.DyeColor;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Matrix4f;
-import net.minecraft.util.registry.Registry;
+import org.lwjgl.opengl.GL11;
 
 /**
  * Multiversion quarantine, to avoid excessive git pain
  */
 public final class EmiPort {
-	private static final net.minecraft.util.math.random.Random RANDOM = net.minecraft.util.math.random.Random.create();
-
-	public static MutableText literal(String s) {
-		return Text.literal(s);
+	public static Text literal(String s) {
+		return new LiteralText(s);
 	}
 
-	public static MutableText literal(String s, Formatting formatting) {
-		return Text.literal(s).formatted(formatting);
+	public static Text literal(String s, Formatting formatting) {
+		return new LiteralText(s).setStyle(fromFormatting(formatting));
 	}
 
-	public static MutableText literal(String s, Formatting... formatting) {
-		return Text.literal(s).formatted(formatting);
+	public static Text literal(String s, Formatting... formatting) {
+		return new LiteralText(s).setStyle(fromFormatting(formatting));
 	}
 
-	public static MutableText literal(String s, Style style) {
-		return Text.literal(s).setStyle(style);
+	private static Style fromFormatting(Formatting... formattings) {
+		Style style = new Style();
+		boolean colored = false;
+
+		for (Formatting formatting : formattings) {
+			if (EmiUtil.getColorValue(formatting) != -1) {
+				if (colored) {
+					throw new IllegalArgumentException("Only one color formatting is supported");
+				}
+				style.setFormatting(formatting);
+				colored = true;
+			}  else {
+				switch (formatting) {
+					case OBFUSCATED -> style.setObfuscated(true);
+					case BOLD -> style.setBold(true);
+					case STRIKETHROUGH -> style.setStrikethrough(true);
+					case UNDERLINE -> style.setUnderline(true);
+					case ITALIC -> style.setItalic(true);
+				}
+			}
+		}
+		return style;
+	}
+
+	public static Text literal(String s, Style style) {
+		return new LiteralText(s).setStyle(style);
 	}
 	
-	public static MutableText translatable(String s) {
-		return Text.translatable(s);
+	public static Text translatable(String s) {
+		return new TranslatableText(s);
 	}
 	
-	public static MutableText translatable(String s, Formatting formatting) {
-		return Text.translatable(s).formatted(formatting);
+	public static Text translatable(String s, Formatting formatting) {
+		return new TranslatableText(s).setStyle(fromFormatting(formatting));
 	}
 	
-	public static MutableText translatable(String s, Object... objects) {
-		return Text.translatable(s, objects);
+	public static Text translatable(String s, Object... objects) {
+		return new TranslatableText(s, objects);
 	}
 
-	public static MutableText append(MutableText text, Text appended) {
+	public static Text append(Text text, Text appended) {
 		return text.append(appended);
 	}
 
 	public static OrderedText ordered(Text text) {
-		return text.asOrderedText();
+		return OrderedText.of(text);
 	}
 
-	public static Collection<Identifier> findResources(ResourceManager manager, String prefix, Predicate<String> pred) {
+	public static Collection<Identifier> findResources(EmiResourceManager manager, String prefix, Predicate<String> pred) {
 		return manager.findResources(prefix, i -> pred.test(i.toString())).keySet();
 	}
 
-	public static InputStream getInputStream(Resource resource) {
+	public static InputStream getInputStream(EmiResource resource) {
 		try {
 			return resource.getInputStream();
 		} catch (Exception e) {
@@ -100,14 +104,14 @@ public final class EmiPort {
 		}
 	}
 
-	public static BannerPattern.Patterns addRandomBanner(BannerPattern.Patterns patterns, Random random) {
+	/*public static BannerPattern.Patterns addRandomBanner(BannerPattern.Patterns patterns, Random random) {
 		return patterns.add(Registry.BANNER_PATTERN.getEntry(random.nextInt(Registry.BANNER_PATTERN.size())).get(),
 			DyeColor.values()[random.nextInt(DyeColor.values().length)]);
 	}
 
-	public static boolean canTallFlowerDuplicate(TallFlowerBlock tallFlowerBlock) {
+	public static boolean canTallFlowerDuplicate(DoublePlantBlock tallFlowerBlock) {
 		try {
-			return tallFlowerBlock.isFertilizable(null, null, null, true) && tallFlowerBlock.canGrow(null, null, null, null);
+			return tallFlowerBlock.method_6460()
 		} catch(Exception e) {
 			return false;
 		}
@@ -129,77 +133,60 @@ public final class EmiPort {
 
 	public static void draw(BufferBuilder bufferBuilder) {
 		BufferRenderer.drawWithShader(bufferBuilder.end());
-	}
+	}*/
 
 	public static int getGuiScale(MinecraftClient client) {
-		return (int) client.getWindow().getScaleFactor();
+		return new Window(client, client.width, client.height).getScaleFactor();
 	}
 
 	public static void setPositionTexShader() {
-		RenderSystem.setShader(GameRenderer::getPositionTexShader);
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
 	}
 
 	public static void setPositionColorTexShader() {
-		RenderSystem.setShader(GameRenderer::getPositionColorTexShader);
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
 	}
 
-	public static Registry<Item> getItemRegistry() {
-		return Registry.ITEM;
+	public static FMLControlledNamespacedRegistry<Item> getItemRegistry() {
+		return GameData.getItemRegistry();
 	}
 
-	public static Registry<Block> getBlockRegistry() {
-		return Registry.BLOCK;
+	public static FMLControlledNamespacedRegistry<Block> getBlockRegistry() {
+		return GameData.getBlockRegistry();
 	}
 
-	public static Registry<Fluid> getFluidRegistry() {
-		return Registry.FLUID;
+	public static Map<String, Fluid> getFluidRegistry() {
+		return FluidRegistry.getRegisteredFluids();
 	}
 
-	public static Registry<Potion> getPotionRegistry() {
-		return Registry.POTION;
+	public static List<Item> getAllItems() {
+		List<Item> items = new ArrayList<>();
+		((Iterable<Item>) getItemRegistry()).forEach(items::add);
+		return items;
 	}
 
-	public static Registry<Enchantment> getEnchantmentRegistry() {
-		return Registry.ENCHANTMENT;
+	public static List<Fluid> getAllFluids() {
+		return new ArrayList<>(getFluidRegistry().values());
 	}
 
-	public static ButtonWidget newButton(int x, int y, int w, int h, Text name, PressAction action) {
-		return new ButtonWidget(x, y, w, h, name, action);
-	}
-
-	public static ItemStack getOutput(Recipe<?> recipe) {
-		return recipe.getOutput();
+	public static ButtonWidget newButton(int x, int y, int w, int h, Text name, Consumer<ButtonWidget> action, ButtonManager manager) {
+		return new ButtonWidget(manager.register(action), x, y, w, h, name.asFormattedString());
 	}
 
 	public static void focus(TextFieldWidget widget, boolean focused) {
-		widget.setTextFieldFocused(focused);
+		widget.setFocused(focused);
 	}
 
 	public static Stream<Item> getDisabledItems() {
 		return Stream.empty();
 	}
 
-	public static Identifier getId(Recipe<?> recipe) {
-		return recipe.getId();
-	}
-
-	public static @Nullable Recipe<?> getRecipe(Identifier id) {
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.world != null && id != null) {
-			RecipeManager manager = client.world.getRecipeManager();
-			if (manager != null) {
-				return manager.get(id).orElse(null);
-			}
-		}
-		return null;
+	public static Identifier getId(Object recipe) {
+		return RecipeIdUtil.getId(recipe);
 	}
 
 	public static Comparison compareStrict() {
 		return Comparison.compareNbt();
-	}
-
-	public static ItemStack setPotion(ItemStack stack, Potion potion) {
-		return PotionUtil.setPotion(stack, potion);
 	}
 
 	public static NbtCompound emptyExtraData() {

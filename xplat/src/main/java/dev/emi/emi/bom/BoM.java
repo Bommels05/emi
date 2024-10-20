@@ -2,6 +2,7 @@ package dev.emi.emi.bom;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -22,7 +23,7 @@ import dev.emi.emi.data.RecipeDefaults;
 import dev.emi.emi.runtime.EmiPersistentData;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.JsonHelper;
+import dev.emi.emi.backport.EmiJsonHelper;
 
 public class BoM {
 	private static RecipeDefaults defaults = new RecipeDefaults();
@@ -34,7 +35,7 @@ public class BoM {
 
 	public static void setDefaults(RecipeDefaults defaults) {
 		BoM.defaults = defaults;
-		MinecraftClient.getInstance().execute(() -> reload());
+		MinecraftClient.getInstance().method_6635(() -> reload());
 	}
 
 	public static JsonObject saveAdded() {
@@ -48,7 +49,7 @@ public class BoM {
 				if (err.ingredient instanceof TagEmiIngredient tei) {
 					JsonElement el = EmiIngredientSerializer.getSerialized(tei.copy().setAmount(1).setChance(1));
 					JsonElement val = EmiIngredientSerializer.getSerialized(err.stack);
-					if (el != null && JsonHelper.isString(el) && val != null) {
+					if (el != null && EmiJsonHelper.isString(el) && val != null) {
 						addedTags.add(el.getAsString(), val);
 					}
 				}
@@ -56,7 +57,7 @@ public class BoM {
 				DefaultStatus status = getRecipeStatus(recipe);
 				placed.add(recipe.getId());
 				if (status == DefaultStatus.FULL) {
-					added.add(recipe.getId().toString());
+					added.add(new JsonPrimitive(recipe.getId().toString()));
 				} else if (status == DefaultStatus.PARTIAL) {
 					JsonArray arr = new JsonArray();
 					for (EmiStack stack : recipe.getOutputs()) {
@@ -67,7 +68,7 @@ public class BoM {
 							}
 						}
 					}
-					if (!arr.isEmpty()) {
+					if (arr.size() > 0) {
 						resolutions.add(recipe.getId().toString(), arr);
 					}
 				}
@@ -76,7 +77,7 @@ public class BoM {
 		JsonArray disabled = new JsonArray();
 		for (EmiRecipe recipe : disabledRecipes) {
 			if (recipe != null && recipe.getId() != null) {
-				disabled.add(recipe.getId().toString());
+				disabled.add(new JsonPrimitive(recipe.getId().toString()));
 			}
 		}
 		JsonObject obj = new JsonObject();
@@ -90,13 +91,13 @@ public class BoM {
 	public static void loadAdded(JsonObject object) {
 		addedRecipes.clear();
 		disabledRecipes.clear();
-		JsonArray disabled = JsonHelper.getArray(object, "disabled", new JsonArray());
+		JsonArray disabled = EmiJsonHelper.getArray(object, "disabled", new JsonArray());
 		for (JsonElement el : disabled) {
 			Identifier id = EmiPort.id(el.getAsString());
 			EmiRecipe recipe = EmiApi.getRecipeManager().getRecipe(id);
 			disabledRecipes.add(recipe);
 		}
-		JsonArray added = JsonHelper.getArray(object, "added", new JsonArray());
+		JsonArray added = EmiJsonHelper.getArray(object, "added", new JsonArray());
 		for (JsonElement el : added) {
 			Identifier id = EmiPort.id(el.getAsString());
 			EmiRecipe recipe = EmiApi.getRecipeManager().getRecipe(id);
@@ -106,12 +107,12 @@ public class BoM {
 				}
 			}
 		}
-		JsonObject resolutions = JsonHelper.getObject(object, "resolutions", new JsonObject());
-		for (String key : resolutions.keySet()) {
+		JsonObject resolutions = EmiJsonHelper.getObject(object, "resolutions", new JsonObject());
+		for (String key : resolutions.entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toSet())) {
 			Identifier id = EmiPort.id(key);
 			EmiRecipe recipe = EmiApi.getRecipeManager().getRecipe(id);
-			if (recipe != null && JsonHelper.hasArray(resolutions, key)) {
-				JsonArray arr = JsonHelper.getArray(resolutions, key);
+			if (recipe != null && EmiJsonHelper.hasArray(resolutions, key)) {
+				JsonArray arr = EmiJsonHelper.getArray(resolutions, key);
 				for (JsonElement el : arr) {
 					EmiIngredient stack = EmiIngredientSerializer.getDeserialized(el);
 					if (!stack.isEmpty()) {
@@ -120,8 +121,8 @@ public class BoM {
 				}
 			}
 		}
-		JsonObject addedTags = JsonHelper.getObject(object, "tags", new JsonObject());
-		for (String key : addedTags.keySet()) {
+		JsonObject addedTags = EmiJsonHelper.getObject(object, "tags", new JsonObject());
+		for (String key : addedTags.entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toSet())) {
 			EmiIngredient tag = EmiIngredientSerializer.getDeserialized(new JsonPrimitive(key));
 			EmiIngredient stack = EmiIngredientSerializer.getDeserialized(addedTags.get(key));
 			if (!tag.isEmpty() && !stack.isEmpty() && stack.getEmiStacks().size() == 1 && tag.getEmiStacks().containsAll(stack.getEmiStacks())) {

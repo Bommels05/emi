@@ -12,8 +12,9 @@ public class IntWidget extends ConfigEntryWidget {
 
 	public IntWidget(Text name, List<TooltipComponent> tooltip, Supplier<String> search, Mutator<Integer> mutator) {
 		super(name, tooltip, search, 20);
-		this.edit = new IntEdit(150, () -> mutator.get(), i -> mutator.set(i));
-		this.setChildren(List.of(edit.text, edit.up, edit.down));
+		this.edit = new IntEdit(150, () -> mutator.get(), i -> mutator.set(i), buttonManager);
+		this.buttons.addAll(List.of(edit.up, edit.down));
+		this.textFields.add(edit.text);
 	}
 
 	@Override

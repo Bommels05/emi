@@ -1,5 +1,6 @@
 package dev.emi.emi.screen.widget.config;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -8,6 +9,7 @@ import com.google.common.collect.Lists;
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.input.EmiBind;
 import dev.emi.emi.input.EmiBind.ModifiedKey;
+import dev.emi.emi.mixin.accessor.ButtonWidgetAccessor;
 import dev.emi.emi.screen.ConfigScreen;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -19,7 +21,6 @@ public class EmiBindWidget extends ConfigEntryWidget {
 	private final ConfigScreen screen;
 	private final Text bindName;
 	private EmiBind bind;
-	private List<ButtonWidget> buttons = Lists.newArrayList();
 
 	public EmiBindWidget(ConfigScreen screen, List<TooltipComponent> tooltip, Supplier<String> search, EmiBind bind) {
 		super(EmiPort.translatable(bind.translationKey), tooltip, search, 0);
@@ -27,7 +28,6 @@ public class EmiBindWidget extends ConfigEntryWidget {
 		this.bindName = EmiPort.translatable(bind.translationKey);
 		this.bind = bind;
 		updateButtons();
-		setChildren(buttons);
 	}
 
 	private void updateButtons() {
@@ -36,7 +36,7 @@ public class EmiBindWidget extends ConfigEntryWidget {
 			final int j = i;
 			ButtonWidget widget = EmiPort.newButton(0, 0, 200, 20, bind.boundKeys.get(i).getKeyText(Formatting.RESET), button -> {
 				screen.setActiveBind(bind, j);
-			});
+			}, buttonManager);
 			buttons.add(widget);
 		}
 	}
@@ -52,23 +52,23 @@ public class EmiBindWidget extends ConfigEntryWidget {
 			button.x = x + width - 224;
 			button.y = y + h;
 			if (screen.activeBind == bind && screen.activeBindOffset == i) {
-				button.setWidth(200);
+				((ButtonWidgetAccessor) button).setWidth(200);
 				button.x = x + width - 224;
 				if (screen.lastModifier == 0) {
-					button.setMessage(EmiPort.literal("...", Formatting.YELLOW));
+					button.message = EmiPort.literal("...", Formatting.YELLOW).asFormattedString();
 				} else {
-					button.setMessage(new ModifiedKey(InputUtil.Type.KEYSYM
+					button.message = new ModifiedKey(InputUtil.Type.KEYSYM
 						.createFromCode(screen.lastModifier), screen.activeModifiers)
-						.getKeyText(Formatting.YELLOW));
+						.getKeyText(Formatting.YELLOW).asFormattedString();
 				}
 			} else if (i < bind.boundKeys.size()) {
 				if (bind.boundKeys.get(i).isUnbound() && i > 0) {
-					button.setWidth(20);
+					((ButtonWidgetAccessor) button).setWidth(20);
 					button.x = x + width - 20;
 					button.y = y;
-					button.setMessage(EmiPort.literal("+", Formatting.AQUA));
+					button.message = EmiPort.literal("+", Formatting.AQUA).asFormattedString();
 				} else {
-					button.setMessage(bind.boundKeys.get(i).getKeyText(Formatting.RESET));
+					button.message = bind.boundKeys.get(i).getKeyText(Formatting.RESET).asFormattedString();
 				}
 			}
 			h += 24;

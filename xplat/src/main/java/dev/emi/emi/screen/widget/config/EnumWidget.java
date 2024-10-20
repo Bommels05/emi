@@ -26,8 +26,8 @@ public class EnumWidget extends ConfigEntryWidget {
 
 		button = EmiPort.newButton(0, 0, 150, 20, getText(), button -> {
 			page(mutator.get(), filter, mutator::set);
-		});
-		this.setChildren(List.of(button));
+		}, buttonManager);
+		this.buttons.addAll(List.of(button));
 	}
 
 	public static void page(ConfigEnum original, Predicate<ConfigEnum> filter, Consumer<ConfigEnum> consumer) {

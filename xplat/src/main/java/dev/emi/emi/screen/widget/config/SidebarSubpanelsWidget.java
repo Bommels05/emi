@@ -1,35 +1,36 @@
 package dev.emi.emi.screen.widget.config;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
 import com.google.common.collect.Lists;
 
 import dev.emi.emi.EmiPort;
+import dev.emi.emi.backport.ButtonManager;
 import dev.emi.emi.config.SidebarSubpanels;
 import dev.emi.emi.config.SidebarType;
 import dev.emi.emi.screen.ConfigScreen.Mutator;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.text.Text;
 
 public class SidebarSubpanelsWidget extends ConfigEntryWidget {
-	private List<ButtonWidget> buttons = Lists.newArrayList();
-	private List<ClickableWidget> raws = Lists.newArrayList();
 	private List<IntEdit> rows = Lists.newArrayList();
 	private Mutator<SidebarSubpanels> mutator;
+	private int buttonCount;
 
 	public SidebarSubpanelsWidget(Text name, List<TooltipComponent> tooltip, Supplier<String> search, Mutator<SidebarSubpanels> mutator) {
 		super(name, tooltip, search, 0);
 		this.mutator = mutator;
-		setChildren(raws);
 		updateButtons();
 	}
 
 	public void updateButtons() {
-		raws.clear();
+		buttonManager = new ButtonManager();
+		textFields.clear();
 		buttons.clear();
+		buttonCount = 0;
 		SidebarSubpanels pages = mutator.get();
 		for (int i = 0; i < pages.subpanels.size(); i++) {
 			final int j = i;
@@ -39,20 +40,21 @@ public class SidebarSubpanelsWidget extends ConfigEntryWidget {
 					pages.subpanels.get(j).type = (SidebarType) t;
 					pages.unique();
 				});
-			}));
-			IntEdit edit = new IntEdit(40, () -> page.rows(), (ni) -> page.rows = Math.max(1, ni));
+			}, buttonManager));
+			buttonCount++;
+			IntEdit edit = new IntEdit(40, () -> page.rows(), (ni) -> page.rows = Math.max(1, ni), buttonManager);
 			rows.add(edit);
-			raws.add(edit.up);
-			raws.add(edit.down);
-			raws.add(edit.text);
+			buttons.add(edit.up);
+			buttons.add(edit.down);
+			textFields.add(edit.text);
 		}
 		buttons.add(EmiPort.newButton(0, 0, 20, 20, EmiPort.literal("+"), b -> {
 			EnumWidget.page(SidebarType.INDEX, t -> t != SidebarType.CHESS, t -> {
 				pages.subpanels.add(new SidebarSubpanels.Subpanel((SidebarType) t, 1));
 				pages.unique();
 			});
-		}));
-		raws.addAll(buttons);
+		}, buttonManager));
+		buttonCount++;
 	}
 
 	@Override
@@ -91,9 +93,9 @@ public class SidebarSubpanelsWidget extends ConfigEntryWidget {
 		if (!isVisible() || !isParentVisible()) {
 			return 0;
 		}
-		if (buttons.size() == 1) {
+		if (buttonCount == 1) {
 			return 20;
 		}
-		return buttons.size() * 24 - 28;
+		return buttonCount * 24 - 28;
 	}
 }

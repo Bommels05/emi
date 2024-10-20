@@ -6,7 +6,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import dev.emi.emi.EmiUtil;
+import dev.emi.emi.backport.ButtonManager;
+import dev.emi.emi.screen.widget.config.*;
+import net.minecraft.client.gui.DrawableHelper;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.util.Window;
 import org.lwjgl.glfw.GLFW;
 
 import com.google.common.collect.Lists;
@@ -31,38 +39,26 @@ import dev.emi.emi.input.EmiBind.ModifiedKey;
 import dev.emi.emi.runtime.EmiDrawContext;
 import dev.emi.emi.input.EmiInput;
 import dev.emi.emi.screen.widget.SizedButtonWidget;
-import dev.emi.emi.screen.widget.config.BooleanWidget;
-import dev.emi.emi.screen.widget.config.ConfigEntryWidget;
-import dev.emi.emi.screen.widget.config.ConfigJumpButton;
-import dev.emi.emi.screen.widget.config.ConfigSearch;
-import dev.emi.emi.screen.widget.config.EmiBindWidget;
-import dev.emi.emi.screen.widget.config.EmiNameWidget;
-import dev.emi.emi.screen.widget.config.EnumWidget;
-import dev.emi.emi.screen.widget.config.GroupNameWidget;
-import dev.emi.emi.screen.widget.config.IntGroupWidget;
-import dev.emi.emi.screen.widget.config.IntWidget;
-import dev.emi.emi.screen.widget.config.ListWidget;
-import dev.emi.emi.screen.widget.config.ScreenAlignWidget;
-import dev.emi.emi.screen.widget.config.SidebarPagesWidget;
-import dev.emi.emi.screen.widget.config.SidebarSubpanelsWidget;
-import dev.emi.emi.screen.widget.config.SubGroupNameWidget;
 import dev.emi.emi.search.EmiSearch;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.StringVisitable;
-import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.GL11;
 
 public class ConfigScreen extends Screen {
 	private static final int maxWidth = 240;
 	private Screen last;
 	private ConfigSearch search;
+	private EmiNameWidget name;
+	private ButtonManager buttonManager;
+	private ExtendedTextFieldWidget searchField;
+	private int lastRealMouseX, lastRealMouseY;
 	public ListWidget list;
 	public EmiBind activeBind;
 	public int activeBindOffset;
@@ -72,7 +68,7 @@ public class ConfigScreen extends Screen {
 	public ButtonWidget resetButton;
 
 	public ConfigScreen(Screen last) {
-		super(EmiPort.translatable("screen.emi.config"));
+		super();
 		this.last = last;
 		originalConfig = EmiConfig.getSavedConfig();
 	}
@@ -84,7 +80,6 @@ public class ConfigScreen extends Screen {
 		lastModifier = 0;
 	}
 
-	@Override
 	public void close() {
 		EmiConfig.writeConfig();
 		EmiSearch.update();
@@ -97,7 +92,7 @@ public class ConfigScreen extends Screen {
 		ConfigValue annot = field.getAnnotation(ConfigValue.class);
 		String key = "config.emi.tooltip." + annot.value().replace('-', '_');
 		Comment comment = field.getAnnotation(Comment.class);
-		if (I18n.hasTranslation(key)) {
+		if (EmiUtil.hasTranslation(key)) {
 			text = (List<TooltipComponent>) (Object) Arrays.stream(I18n.translate(key).split("\n"))
 				.map(EmiPort::literal).map(EmiTooltipComponents::of).toList();
 		} else if (comment != null) {
@@ -114,8 +109,9 @@ public class ConfigScreen extends Screen {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected void init() {
+	public void init() {
 		super.init();
+		buttonManager = new ButtonManager();
 
 		// Persistent-ish state
 		int scroll = 0;
@@ -127,40 +123,39 @@ public class ConfigScreen extends Screen {
 			for (ListWidget.Entry e : list.children()) {
 				if (e instanceof GroupNameWidget g) {
 					if (g.collapsed) {
-						collapsed.add(g.text.getString());
+						collapsed.add(g.text.asUnformattedString());
 					}
 				}
 			}
 		}
 
 		list = new ListWidget(client, width, height, 40, height - 60);
-		this.addDrawable(new EmiNameWidget(width / 2, 16));
+		name = new EmiNameWidget(width / 2, 16);
 		int w = Math.min(400, width - 40) / 4 * 4;
 		int x = (width - w) / 2;
 		search = new ConfigSearch(x + 3, height - 51, w / 2 - 4, 18);
-		this.addDrawable(search.field);
+		searchField = search.field;
 		this.resetButton = EmiPort.newButton(x + 2, height - 30, w / 2 - 2, 20, EmiPort.translatable("gui.done"), button -> {
 			EmiConfig.loadConfig(QDCSS.load("revert", originalConfig));
 			MinecraftClient client = MinecraftClient.getInstance();
-			this.init(client, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight());
-		});
-		this.addDrawableChild(EmiPort.newButton(x + w / 2 + 2, height - 30, w / 2 - 2, 20, EmiPort.translatable("gui.done"), button -> {
+			this.init(client, width, height);
+		}, buttonManager);
+		this.buttons.add(EmiPort.newButton(x + w / 2 + 2, height - 30, w / 2 - 2, 20, EmiPort.translatable("gui.done"), button -> {
 			this.close();
-		}));
-		this.addDrawableChild(EmiPort.newButton(x + w / 2 + 2, height - 52, w / 2 - 24, 20, EmiPort.translatable("screen.emi.presets"), button -> {
+		}, buttonManager));
+		this.buttons.add(EmiPort.newButton(x + w / 2 + 2, height - 52, w / 2 - 24, 20, EmiPort.translatable("screen.emi.presets"), button -> {
 			MinecraftClient client = MinecraftClient.getInstance();
 			client.setScreen(new ConfigPresetScreen(this));
-		}));
-		this.addDrawableChild(new SizedButtonWidget(x + w - 20, height - 52, 20, 20, 164, 0, () -> true, widget -> {
+		}, buttonManager));
+		this.buttons.add(new SizedButtonWidget(x + w - 20, height - 52, 20, 20, 164, 0, () -> true, widget -> {
 			EmiConfig.setGlobalState(!EmiConfig.useGlobalConfig);
-			ConfigScreen.this.resize(client, width, height);
-		}, () -> (EmiConfig.useGlobalConfig ? 40 : 0), () -> {
+			ConfigScreen.this.init(client, width, height);
+		}, buttonManager, () -> (EmiConfig.useGlobalConfig ? 40 : 0), () -> {
 			return (List<Text>) (Object) Arrays.stream(I18n.translate("tooltip.emi.config.global").split("\n"))
-				.map(s -> client.textRenderer.getTextHandler().wrapLines(StringVisitable.plain(s), maxWidth, Style.EMPTY))
-				.flatMap(l -> l.stream()).map(v -> EmiPort.literal(v.getString())).toList();
+				.map(s -> client.textRenderer.wrapLines(s, maxWidth))
+				.flatMap(l -> l.stream()).map(v -> EmiPort.literal(v.toString())).toList();
 		}));
-		this.addDrawableChild(resetButton);
-		this.addSelectableChild(search.field);
+		this.buttons.add(resetButton);
 
 		try {
 			String lastGroup = "";
@@ -179,7 +174,7 @@ public class ConfigScreen extends Screen {
 						lastGroup = group;
 						Text text = EmiPort.translatable("config.emi.group." + group.replace('-', '_'));
 						lastGroupWidget = new GroupNameWidget(group, text);
-						if (collapsed.contains(text.getString())) {
+						if (collapsed.contains(text.asUnformattedString())) {
 							lastGroupWidget.collapsed = true;
 						}
 						list.addEntry(lastGroupWidget);
@@ -189,7 +184,7 @@ public class ConfigScreen extends Screen {
 						currentGroup = configGroup;
 						Text text = EmiPort.translatable("config.emi.group." + configGroup.value().replace('-', '_'));
 						currentSubGroupWidget = new SubGroupNameWidget(configGroup.value(), text);
-						if (collapsed.contains(text.getString())) {
+						if (collapsed.contains(text.asUnformattedString())) {
 							currentSubGroupWidget.collapsed = true;
 						}
 						currentSubGroupWidget.parent = lastGroupWidget;
@@ -267,7 +262,6 @@ public class ConfigScreen extends Screen {
 			e.printStackTrace();
 		}
 
-		this.addSelectableChild(list);
 		list.setScrollAmount(scroll);
 		search.setText(query);
 		addJumpButtons();
@@ -304,8 +298,8 @@ public class ConfigScreen extends Screen {
 			} else {
 				u += 16;
 			}
-			this.addDrawableChild(new ConfigJumpButton(
-				2 + (newGroup ? 0 : 8), y, u, v, w -> jump(s),
+			this.buttons.add(new ConfigJumpButton(
+				2 + (newGroup ? 0 : 8), y, u, v, w -> jump(s), buttonManager,
 				List.of(EmiPort.translatable("config.emi.group." + s.replace('-', '_')))));
 			y += 16;
 		}
@@ -359,30 +353,54 @@ public class ConfigScreen extends Screen {
 			}
 		}
 		this.resetButton.active = different > 0;
-		this.resetButton.setMessage(EmiPort.translatable("screen.emi.config.reset", different));
+		this.resetButton.message = EmiPort.translatable("screen.emi.config.reset", different).asFormattedString();
 	}
 	
 	@Override
-	public void render(MatrixStack raw, int mouseX, int mouseY, float delta) {
-		EmiDrawContext context = EmiDrawContext.wrap(raw);
+	public void render(int mouseX, int mouseY, float delta) {
+		EmiDrawContext context = EmiDrawContext.wrap(MatrixStack.INSTANCE);
 		list.setScrollAmount(list.getScrollAmount());
-		this.renderBackgroundTexture(-100);
-		list.render(context.raw(), mouseX, mouseY, delta);
-		super.render(context.raw(), mouseX, mouseY, delta);
+		if (list.isMouseOver(mouseX, mouseY)) {
+			list.render(context.raw(), mouseX, mouseY, delta);
+		} else {
+			list.render(context.raw(), 0, 0, delta);
+		}
+		EmiRenderHelper.renderSplitBackground(this, list);
+		name.render(context.raw(), mouseX, mouseY, delta);
+		search.field.render();
+		super.render(mouseX, mouseY, delta);
 		if (list.getHoveredEntry() != null) {
 			EmiRenderHelper.drawTooltip(this, context, list.getHoveredEntry().getTooltip(mouseX, mouseY), mouseX, mouseY, Math.min(width / 2 - 16, maxWidth));
 		}
 	}
 	
 	@Override
-	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+	public void mouseClicked(int mouseX, int mouseY, int button) {
 		if (activeBind != null) {
 			pushModifier(0);
 			activeBind.setBind(activeBindOffset, new ModifiedKey(InputUtil.Type.MOUSE.createFromCode(button), activeModifiers));
 			activeBind = null;
-			return true;
+			return;
 		}
-		return super.mouseClicked(mouseX, mouseY, button);
+		this.list.mouseClicked(mouseX, mouseY, button);
+		if (searchField.isMouseOver(mouseX, mouseY)) {
+			searchField.mouseClicked(mouseX, mouseY, button);
+		} else {
+			searchField.setFocused(false);
+		}
+		super.mouseClicked(mouseX, mouseY, button);
+	}
+
+	@Override
+	protected void mouseReleased(int mouseX, int mouseY, int button) {
+		this.list.mouseReleased(mouseX, mouseY, button);
+		super.mouseReleased(mouseX, mouseY, button);
+	}
+
+	@Override
+	protected void mouseDragged(int mouseX, int mouseY, int button, long mouseLastClicked) {
+		this.list.mouseDragged(mouseX, mouseY, button, (mouseX - lastRealMouseX), (mouseY - lastRealMouseY));
+		super.mouseDragged(mouseX, mouseY, button, mouseLastClicked);
 	}
 
 	private void pushModifier(int lastModifier) {
@@ -392,7 +410,7 @@ public class ConfigScreen extends Screen {
 	}
 
 	@Override
-	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+	public void keyPressed(char c, int keyCode) {
 		if (activeBind != null) {
 			if (EmiInput.maskFromCode(keyCode) != 0) {
 				pushModifier(keyCode);
@@ -406,49 +424,54 @@ public class ConfigScreen extends Screen {
 				activeBind = null;
 				updateChanges();
 			}
-			return true;
+			return;
 		} else {
 			// Element nesting causes crashing for cycling, for some reason
 			if (keyCode == GLFW.GLFW_KEY_TAB) {
-				return false;
+				return;
 			}
-			if (super.keyPressed(keyCode, scanCode, modifiers)) {
-				return true;
-			}
-			if (this.getFocused() instanceof TextFieldWidget tfw && tfw.isFocused()) {
-				if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-					EmiPort.focus(tfw, false);
-					return true;
-				}
-			} else {
-				if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-					this.close();
-					return true;
-				} else if (this.client.options.inventoryKey.matchesKey(keyCode, scanCode)) {
-					this.close();
-					return true;
+			List<List<ExtendedTextFieldWidget>> textFieldsUncollapsed = EmiUtil.gatherChildren(this.list).stream().filter(element -> element instanceof ConfigEntryWidget).map(
+					widget -> (ConfigEntryWidget) widget).map(ConfigEntryWidget::getTextFields).collect(Collectors.toList());
+			for (List<ExtendedTextFieldWidget> textFields : textFieldsUncollapsed) {
+				for (ExtendedTextFieldWidget textField : textFields) {
+					if (textField.isFocused() && keyCode == GLFW.GLFW_KEY_ESCAPE) {
+						EmiPort.focus(textField, false);
+						return;
+					}
 				}
 			}
+			if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+				this.close();
+				return;
+			} else if (keyCode == this.client.options.inventoryKey.getCode()) {
+				this.close();
+				return;
+			}
+			if (searchField.isFocused()) {
+				searchField.keyPressed(c, keyCode);
+				return;
+			}
+			this.list.keyPressed(c, keyCode);
 		}
-		return false;
+		super.keyPressed(c, keyCode);
 	}
 
 	@Override
-	public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-		if (activeBind != null) {
-			activeModifiers &= ~EmiInput.maskFromCode(keyCode);
-			if (keyCode == lastModifier) {
-				activeBind.setBind(activeBindOffset, new ModifiedKey(InputUtil.Type.KEYSYM.createFromCode(keyCode), activeModifiers));
-				activeBind = null;
-			}
-			return true;
+	public void handleMouse() {
+		super.handleMouse();
+		int mouseX = Mouse.getEventX() * this.width / this.client.width;
+		int mouseY = this.height - Mouse.getEventY() * this.height / this.client.height - 1;
+		lastRealMouseX = mouseX;
+		lastRealMouseY = mouseY;
+		int amount = EmiUtil.mapScrollAmount(Mouse.getEventDWheel());
+		if (amount != 0) {
+			list.mouseScrolled(mouseX, mouseY, amount);
 		}
-		return super.keyReleased(keyCode, scanCode, modifiers);
 	}
 
 	@Override
-	public boolean shouldCloseOnEsc() {
-		return false;
+	protected void buttonClicked(ButtonWidget button) {
+		buttonManager.handleClick(button);
 	}
 
 	public abstract class Mutator<T> {

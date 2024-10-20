@@ -24,7 +24,7 @@ public class RegexTooltipQuery extends Query {
 			return false;
 		}
 		for (Text text : TooltipQuery.getText(stack)) {
-			Matcher m = pattern.matcher(text.getString());
+			Matcher m = pattern.matcher(text.asUnformattedString());
 			if (m.find()) {
 				return true;
 			}

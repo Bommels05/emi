@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.EmiRenderHelper;
+import dev.emi.emi.EmiUtil;
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.bom.ChanceMaterialCost;
@@ -15,9 +16,9 @@ import dev.emi.emi.bom.MaterialTree;
 import dev.emi.emi.registry.EmiStackList;
 import dev.emi.emi.runtime.EmiDrawContext;
 import net.minecraft.client.font.TextRenderer;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.math.Matrix4f;
 
 public class RecipeCostTooltipComponent implements EmiTooltipComponent {
 	private static final Text COST = EmiPort.translatable("emi.cost_per");
@@ -88,7 +89,7 @@ public class RecipeCostTooltipComponent implements EmiTooltipComponent {
 
 	@Override
 	public int getWidth(TextRenderer textRenderer) {
-		return Math.max(textRenderer.getWidth(COST), maxWidth);
+		return Math.max(textRenderer.getStringWidth(COST.asUnformattedString()), maxWidth);
 	}
 
 	@Override
@@ -101,7 +102,7 @@ public class RecipeCostTooltipComponent implements EmiTooltipComponent {
 
 	@Override
 	public void drawTooltipText(TextRenderData text) {
-		text.draw(COST, 0, 0, Formatting.GRAY.getColorValue(), true);
+		text.draw(COST, 0, 0, EmiUtil.getColorValue(Formatting.GRAY), true);
 	}
 
 	private static class Node {
@@ -112,7 +113,7 @@ public class RecipeCostTooltipComponent implements EmiTooltipComponent {
 		public Node(EmiIngredient stack, double amount, boolean chanced) {
 			this.stack = stack;
 			if (chanced) {
-				text = EmiPort.append(EmiPort.literal("≈"), EmiRenderHelper.getAmountText(stack, amount)).formatted(Formatting.GOLD);
+				text = EmiPort.append(EmiPort.literal("≈"), EmiRenderHelper.getAmountText(stack, amount)).setStyle(new Style().setFormatting(Formatting.GOLD));
 			} else {
 				text = EmiRenderHelper.getAmountText(stack, amount);
 			}

@@ -10,20 +10,17 @@ import dev.emi.emi.EmiPort;
 import dev.emi.emi.EmiRenderHelper;
 import dev.emi.emi.api.EmiApi;
 import dev.emi.emi.api.recipe.EmiRecipe;
-import dev.emi.emi.api.stack.Comparison;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.config.EmiConfig;
 import dev.emi.emi.config.HelpLevel;
 import dev.emi.emi.registry.EmiRecipeFiller;
-import dev.emi.emi.screen.StackBatcher.Batchable;
 import dev.emi.emi.screen.tooltip.RecipeTooltipComponent;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 
-public class EmiFavorite implements EmiIngredient, Batchable {
+public class EmiFavorite implements EmiIngredient {
 	protected final EmiIngredient stack;
 	protected final @Nullable EmiRecipe recipe;
 
@@ -111,7 +108,7 @@ public class EmiFavorite implements EmiIngredient, Batchable {
 		return obj instanceof EmiIngredient ingredient && EmiIngredient.areEqual(this, ingredient);
 	}
 
-	@Override
+	/*@Override
 	public boolean isSideLit() {
 		return stack instanceof Batchable b && b.isSideLit();
 	}
@@ -133,7 +130,7 @@ public class EmiFavorite implements EmiIngredient, Batchable {
 		if (stack instanceof Batchable b) {
 			b.renderForBatch(vcp, raw, x, y, z, delta);
 		}
-	}
+	}*/
 
 	public static class Craftable extends EmiFavorite {
 
@@ -206,24 +203,19 @@ public class EmiFavorite implements EmiIngredient, Batchable {
 				}
 			}
 			if (state == 0) {
-				list.add(TooltipComponent.of(EmiPort.translatable("tooltip.emi.synfav.uncraftable").asOrderedText()));
+				list.add(TooltipComponent.of(EmiPort.translatable("tooltip.emi.synfav.uncraftable")));
 			} else if (state == 1) {
-				list.add(TooltipComponent.of(EmiPort.translatable("tooltip.emi.synfav.partially_craftable").asOrderedText()));
+				list.add(TooltipComponent.of(EmiPort.translatable("tooltip.emi.synfav.partially_craftable")));
 				if (craftKey != null) {
-					list.add(TooltipComponent.of(EmiPort.translatable("tooltip.emi.synfav.craft_some", craftKey).asOrderedText()));
+					list.add(TooltipComponent.of(EmiPort.translatable("tooltip.emi.synfav.craft_some", craftKey)));
 				}
 			} else if (state == 2) {
-				list.add(TooltipComponent.of(EmiPort.translatable("tooltip.emi.synfav.fully_craftable", batches).asOrderedText()));
+				list.add(TooltipComponent.of(EmiPort.translatable("tooltip.emi.synfav.fully_craftable", batches)));
 				if (craftKey != null) {
-					list.add(TooltipComponent.of(EmiPort.translatable("tooltip.emi.synfav.craft_all", craftKey, batches).asOrderedText()));
+					list.add(TooltipComponent.of(EmiPort.translatable("tooltip.emi.synfav.craft_all", craftKey, batches)));
 				}
 			}
 			return list;
-		}
-
-		@Override
-		public boolean isUnbatchable() {
-			return true;
 		}
 	}
 }

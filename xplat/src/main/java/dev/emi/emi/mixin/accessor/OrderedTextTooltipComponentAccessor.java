@@ -1,6 +1,6 @@
 package dev.emi.emi.mixin.accessor;
 
-import org.spongepowered.asm.mixin.Mixin;
+/*import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 import net.minecraft.client.gui.tooltip.OrderedTextTooltipComponent;
@@ -11,4 +11,4 @@ public interface OrderedTextTooltipComponentAccessor {
 	
 	@Accessor("text")
     public OrderedText getText();
-}
+}*/

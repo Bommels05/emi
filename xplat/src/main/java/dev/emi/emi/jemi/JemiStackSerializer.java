@@ -1,6 +1,6 @@
 package dev.emi.emi.jemi;
 
-import java.util.Optional;
+/*import java.util.Optional;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -87,4 +87,4 @@ public class JemiStackSerializer implements EmiIngredientSerializer<JemiStack> {
 		}
 		return json;
 	}
-}
+}*/

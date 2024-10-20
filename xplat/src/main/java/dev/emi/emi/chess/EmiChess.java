@@ -1,6 +1,8 @@
 package dev.emi.emi.chess;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import com.google.common.collect.ImmutableList;
@@ -13,8 +15,6 @@ import dev.emi.emi.config.SidebarType;
 import dev.emi.emi.network.EmiChessPacket;
 import dev.emi.emi.network.EmiNetwork;
 import dev.emi.emi.screen.EmiScreenManager;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -30,7 +30,7 @@ public class EmiChess {
 	public MoveGenerator generator = new StandardMoveGenerator(PieceColor.BLACK);
 	public PieceColor turn = PieceColor.WHITE;
 	public int lastChecked = -1;
-	public IntSet targets = new IntOpenHashSet();
+	public Set<Integer> targets = new HashSet<>();
 	public int promotionStart = -1;
 	public int pendingPromotion = -1;
 
@@ -177,8 +177,8 @@ public class EmiChess {
 	private static void invitePlayer() {
 		MinecraftClient client = MinecraftClient.getInstance();
 		String name = EmiScreenManager.search.getText();
-		for (AbstractClientPlayerEntity player : client.world.getPlayers()) {
-			if (player.getName().getString().equals(name)) {
+		for (PlayerEntity player : (List<PlayerEntity>) client.world.playerEntities) {
+			if (player.getTranslationKey().equals(name)) {
 				get().opponent = player.getUuid();
 				sendNetwork(player.getUuid(), -1, 0, 0);
 			}
@@ -199,7 +199,7 @@ public class EmiChess {
 		if (type == -1) {
 			if (EmiScreenManager.hasSidebarAvailable(SidebarType.CHESS)) {
 				chess.pending = uuid;
-				client.player.sendMessage(EmiPort.translatable("emi.chess.multiplayer.invited", player.getDisplayName()), false);
+				client.field_3805.sendMessage(EmiPort.translatable("emi.chess.multiplayer.invited", player.getName()));
 			} else {
 				sendNetwork(uuid, -4, 0, 0);
 			}
@@ -208,18 +208,18 @@ public class EmiChess {
 				sendNetwork(uuid, -3, 0, 0);
 			} else {
 				if (uuid.equals(chess.opponent)) {
-					client.player.sendMessage(EmiPort.translatable("emi.chess.multiplayer.accepted", player.getDisplayName()), false);
+					client.field_3805.sendMessage(EmiPort.translatable("emi.chess.multiplayer.accepted", player.getName()));
 					chess.generator = new NetworkedMoveGenerator(PieceColor.BLACK);
 				}
 			}
 		} else if (type == -3) {
 			if (uuid.equals(chess.opponent)) {
-				client.player.sendMessage(EmiPort.translatable("emi.chess.multiplayer.cancelled", player.getDisplayName()), false);
+				client.field_3805.sendMessage(EmiPort.translatable("emi.chess.multiplayer.cancelled", player.getName()));
 				restart();
 			}
 		} else if (type == -4) {
 			if (uuid.equals(chess.opponent)) {
-				client.player.sendMessage(EmiPort.translatable("emi.chess.multiplayer.unavailable", player.getDisplayName()), false);
+				client.field_3805.sendMessage(EmiPort.translatable("emi.chess.multiplayer.unavailable", player.getName()));
 			}
 		} else if (chess.generator instanceof NetworkedMoveGenerator nmg && chess.opponent.equals(uuid)) {
 			ChessMove desired = ChessMove.of(start, end, type);

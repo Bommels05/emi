@@ -1,11 +1,15 @@
 package dev.emi.emi.api.recipe;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.inventory.slot.Slot;
+import net.minecraft.screen.ScreenHandler;
 import org.jetbrains.annotations.ApiStatus;
 
 import com.google.common.collect.Lists;
@@ -23,13 +27,10 @@ import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.registry.EmiRecipeFiller;
 import dev.emi.emi.registry.EmiStackList;
 import dev.emi.emi.runtime.EmiFavorite;
-import it.unimi.dsi.fastutil.objects.Object2LongMap;
-import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.Slot;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class EmiPlayerInventory {
@@ -40,15 +41,15 @@ public class EmiPlayerInventory {
 	@Deprecated
 	@ApiStatus.Internal
 	public EmiPlayerInventory(PlayerEntity entity) {
-		HandledScreen<?> screen = EmiApi.getHandledScreen();
-		if (screen != null && screen.getScreenHandler() != null) {
-			if (screen.getScreenHandler().getCursorStack() != null) {
-				addStack(screen.getScreenHandler().getCursorStack());
+		HandledScreen screen = EmiApi.getHandledScreen();
+		if (screen != null && screen.screenHandler != null) {
+			if (entity.inventory.getCursorStack() != null) {
+				addStack(entity.inventory.getCursorStack());
 			}
 			List<EmiRecipeHandler<?>> handlers = (List) EmiRecipeFiller.getAllHandlers(screen);
 			if (!handlers.isEmpty()) {
 				if (handlers.get(0) instanceof StandardRecipeHandler standard) {
-					List<Slot> slots = standard.getInputSources(screen.getScreenHandler());
+					List<Slot> slots = standard.getInputSources(screen.screenHandler);
 					for (Slot slot : slots) {
 						if (slot.canTakeItems(entity)) {
 							addStack(slot.getStack());
@@ -59,9 +60,9 @@ public class EmiPlayerInventory {
 			}
 		}
 
-		PlayerInventory pInv = entity.getInventory();
-		for (int i = 0; i < pInv.main.size(); i++) {
-			addStack(pInv.main.get(i));
+		PlayerInventory pInv = entity.inventory;
+		for (int i = 0; i < pInv.main.length; i++) {
+			addStack(pInv.main[i]);
 		}
 	}
 
@@ -69,16 +70,17 @@ public class EmiPlayerInventory {
 		for (EmiStack stack : stacks) {
 			addStack(stack);
 		}
-		HandledScreen<?> screen = EmiApi.getHandledScreen();
-		if (screen != null && screen.getScreenHandler() != null) {
-			if (screen.getScreenHandler().getCursorStack() != null) {
-				addStack(screen.getScreenHandler().getCursorStack());
+		HandledScreen screen = EmiApi.getHandledScreen();
+		if (screen != null && screen.screenHandler != null) {
+			PlayerInventory playerInv = MinecraftClient.getInstance().field_3805.inventory;
+			if (playerInv.getCursorStack() != null) {
+				addStack(playerInv.getCursorStack());
 			}
 		}
 	}
 
 	public static EmiPlayerInventory of(PlayerEntity entity) {
-		HandledScreen<?> screen = EmiApi.getHandledScreen();
+		HandledScreen screen = EmiApi.getHandledScreen();
 		if (screen != null) {
 			List<EmiRecipeHandler<?>> handlers = (List) EmiRecipeFiller.getAllHandlers(screen);
 			if (!handlers.isEmpty()) {
@@ -104,7 +106,7 @@ public class EmiPlayerInventory {
 
 	public Predicate<EmiRecipe> getPredicate() {
 		HandledScreen screen = EmiApi.getHandledScreen();
-		List<EmiRecipeHandler> handlers = EmiRecipeFiller.getAllHandlers(screen);
+		List<EmiRecipeHandler<ScreenHandler>> handlers = EmiRecipeFiller.getAllHandlers(screen);
 		if (!handlers.isEmpty()) {
 			EmiCraftContext context = new EmiCraftContext(screen, this, EmiCraftContext.Type.CRAFTABLE);
 			return r -> {
@@ -143,7 +145,7 @@ public class EmiPlayerInventory {
 	}
 
 	public List<Boolean> getCraftAvailability(EmiRecipe recipe) {
-		Object2LongMap<EmiStack> used = new Object2LongOpenHashMap<>();
+		Map<EmiStack, Long> used = new HashMap<>();
 		List<Boolean> states = Lists.newArrayList();
 		outer:
 		for (EmiIngredient ingredient : recipe.getInputs()) {
@@ -151,7 +153,7 @@ public class EmiPlayerInventory {
 				long desired = stack.getAmount();
 				if (inventory.containsKey(stack)) {
 					EmiStack identity = inventory.get(stack);
-					long alreadyUsed = used.getOrDefault(identity, 0);
+					long alreadyUsed = used.getOrDefault(identity, 0L);
 					long available = identity.getAmount() - alreadyUsed;
 					if (available >= desired) {
 						used.put(identity, desired + alreadyUsed);
@@ -170,7 +172,7 @@ public class EmiPlayerInventory {
 	}
 
 	public boolean canCraft(EmiRecipe recipe, long amount) {
-		Object2LongMap<EmiStack> used = new Object2LongOpenHashMap<>();
+		Map<EmiStack, Long> used = new HashMap<>();
 		outer:
 		for (EmiIngredient ingredient : recipe.getInputs()) {
 			if (ingredient.isEmpty()) {
@@ -180,7 +182,7 @@ public class EmiPlayerInventory {
 				long desired = stack.getAmount() * amount;
 				if (inventory.containsKey(stack)) {
 					EmiStack identity = inventory.get(stack);
-					long alreadyUsed = used.getOrDefault(identity, 0);
+					long alreadyUsed = used.getOrDefault(identity, 0L);
 					long available = identity.getAmount() - alreadyUsed;
 					if (available >= desired) {
 						used.put(identity, desired + alreadyUsed);

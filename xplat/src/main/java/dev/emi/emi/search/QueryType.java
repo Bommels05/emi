@@ -3,25 +3,26 @@ package dev.emi.emi.search;
 import java.util.function.Function;
 
 import net.minecraft.text.Style;
+import net.minecraft.util.Formatting;
 
 public enum QueryType {
-	DEFAULT("",  0xffffff, 0xcc3737, 0xff5555, 0xfca955, NameQuery::new, RegexNameQuery::new),
-	MOD(    "@", 0x5555ff, 0x5555ff, 0x9b5cdb, 0xf22bf2, ModQuery::new, RegexModQuery::new),
-	TOOLTIP("$", 0xffff55, 0xffff55, 0xbdf486, 0xf4bd86, TooltipQuery::new, RegexTooltipQuery::new),
-	TAG(    "#", 0x55ff55, 0x55ff55, 0x41eace, 0x0098ea, TagQuery::new, RegexTagQuery::new),
+	DEFAULT("",  Formatting.WHITE, Formatting.RED, Formatting.RED, Formatting.GOLD, NameQuery::new, RegexNameQuery::new),
+	MOD(    "@", Formatting.BLUE, Formatting.BLUE, Formatting.DARK_PURPLE, Formatting.LIGHT_PURPLE, ModQuery::new, RegexModQuery::new),
+	TOOLTIP("$", Formatting.YELLOW, Formatting.YELLOW, Formatting.GREEN, Formatting.GOLD, TooltipQuery::new, RegexTooltipQuery::new),
+	TAG(    "#", Formatting.GREEN, Formatting.GREEN, Formatting.AQUA, Formatting.DARK_AQUA, TagQuery::new, RegexTagQuery::new),
 	;
 
 	public final String prefix;
 	public final Style color, slashColor, regexColor, escapeColor;
 	public final Function<String, Query> queryConstructor, regexQueryConstructor;
 
-	private QueryType(String prefix, int color, int slashColor, int regexColor, int escapeColor,
+	private QueryType(String prefix, Formatting color, Formatting slashColor, Formatting regexColor, Formatting escapeColor,
 			Function<String, Query> queryConstructor, Function<String, Query> regexQueryConstructor) {
 		this.prefix = prefix;
-		this.color = Style.EMPTY.withColor(color);
-		this.slashColor = Style.EMPTY.withColor(slashColor);
-		this.regexColor = Style.EMPTY.withColor(regexColor);
-		this.escapeColor = Style.EMPTY.withColor(escapeColor);
+		this.color = new Style().setFormatting(color);
+		this.slashColor = new Style().setFormatting(slashColor);
+		this.regexColor = new Style().setFormatting(regexColor);
+		this.escapeColor = new Style().setFormatting(escapeColor);
 		this.queryConstructor = queryConstructor;
 		this.regexQueryConstructor = regexQueryConstructor;
 	}

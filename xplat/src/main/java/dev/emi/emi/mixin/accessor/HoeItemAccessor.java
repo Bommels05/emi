@@ -1,6 +1,6 @@
 package dev.emi.emi.mixin.accessor;
 
-import java.util.Map;
+/*import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -20,4 +20,4 @@ public interface HoeItemAccessor {
 	public static Map<Block, Pair<Predicate<ItemUsageContext>, Consumer<ItemUsageContext>>> getTillingActions() {
 		throw new AssertionError();
 	}
-}
+}*/

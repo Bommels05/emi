@@ -2,44 +2,31 @@ package dev.emi.emi.api.stack;
 
 import java.util.List;
 
+import dev.emi.emi.backport.TagKey;
 import org.jetbrains.annotations.ApiStatus;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.EmiRenderHelper;
 import dev.emi.emi.EmiUtil;
 import dev.emi.emi.api.render.EmiRender;
 import dev.emi.emi.config.EmiConfig;
-import dev.emi.emi.mixin.accessor.BakedModelManagerAccessor;
-import dev.emi.emi.mixin.accessor.ItemRendererAccessor;
 import dev.emi.emi.registry.EmiTags;
 import dev.emi.emi.runtime.EmiDrawContext;
 import dev.emi.emi.screen.tooltip.RemainderTooltipComponent;
 import dev.emi.emi.screen.tooltip.TagTooltipComponent;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.client.render.DiffuseLighting;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.TexturedRenderLayers;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.item.ItemRenderer;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.render.model.json.ModelTransformation;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tag.TagKey;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.RegistryEntry;
 
 @ApiStatus.Internal
 public class TagEmiIngredient implements EmiIngredient {
 	private final Identifier id;
 	private List<EmiStack> stacks;
-	public final TagKey<?> key;
+	public final TagKey key;
 	private long amount;
 	private float chance = 1;
 
@@ -111,8 +98,11 @@ public class TagEmiIngredient implements EmiIngredient {
 					stacks.get(0).render(context.raw(), x, y, delta, -1 ^ RENDER_AMOUNT);
 				}
 			} else {
-				BakedModel model = ((BakedModelManagerAccessor) client.getBakedModelManager()).getModels()
-					.getOrDefault(EmiTags.getCustomModel(key), client.getBakedModelManager().getMissingModel());
+				//todo tag models
+				Identifier modelId = EmiTags.getCustomModel(key);
+				context.drawTexture(modelId, x, y, 0, 0, 16, 16);
+				/*BakedModel model = ((BakedModelManagerAccessor) client.getTextureManager().gegetBakedModelManager()).getModels()
+					.getOrDefault(modelId, client.getBakedModelManager().getMissingModel());
 					
 				MatrixStack vs = RenderSystem.getModelViewStack();
 				vs.push();
@@ -143,10 +133,10 @@ public class TagEmiIngredient implements EmiIngredient {
 				}
 
 				vs.pop();
-				RenderSystem.applyModelViewMatrix();
+				RenderSystem.applyModelViewMatrix();*/
 			}
 		}
-		if ((flags & RENDER_AMOUNT) != 0 && !key.registry().equals(EmiPort.getFluidRegistry().getKey())) {
+		if ((flags & RENDER_AMOUNT) != 0 && key.getType() != TagKey.Type.FLUID) {
 			String count = "";
 			if (amount != 1) {
 				count += amount;
@@ -168,7 +158,7 @@ public class TagEmiIngredient implements EmiIngredient {
 		if (EmiUtil.showAdvancedTooltips()) {
 			list.add(TooltipComponent.of(EmiPort.ordered(EmiPort.literal("#" + id, Formatting.DARK_GRAY))));
 		}
-		if (key.registry().equals(EmiPort.getFluidRegistry().getKey()) && amount > 1) {
+		if (key.getType() == TagKey.Type.FLUID && amount > 1) {
 			list.add(TooltipComponent.of(EmiPort.ordered(EmiRenderHelper.getAmountText(this, amount))));
 		}
 		if (EmiConfig.appendModId) {

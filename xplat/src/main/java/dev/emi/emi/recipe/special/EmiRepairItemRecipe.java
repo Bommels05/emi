@@ -16,7 +16,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 
 public class EmiRepairItemRecipe extends EmiPatternCraftingRecipe {
-	public static final List<Item> TOOLS = EmiPort.getItemRegistry().stream()
+	public static final List<Item> TOOLS = EmiPort.getAllItems().stream()
 			.filter(Item::isDamageable).collect(Collectors.toList());
 	private final Item tool;
 
@@ -53,7 +53,7 @@ public class EmiRepairItemRecipe extends EmiPatternCraftingRecipe {
 
 	private ItemStack getMergeItems(Random random) {
 		List<ItemStack> items = getItems(random);
-		ItemStack item = tool.getDefaultStack();
+		ItemStack item = new ItemStack(tool);
 		int maxDamage = tool.getMaxDamage();
 		int damage = items.get(0).getDamage() - (21 * maxDamage)/20 + items.get(1).getDamage();
 		if (damage > 0) {
@@ -63,7 +63,7 @@ public class EmiRepairItemRecipe extends EmiPatternCraftingRecipe {
 	}
 
 	private ItemStack getTool(Random r) {
-		ItemStack stack = tool.getDefaultStack();
+		ItemStack stack = new ItemStack(tool);
 		if (stack.getMaxDamage() <= 0) {
 			return stack;
 		}

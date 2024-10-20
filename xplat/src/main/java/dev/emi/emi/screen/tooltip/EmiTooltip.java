@@ -7,6 +7,7 @@ import java.util.List;
 import dev.emi.emi.EmiPort;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.client.resource.language.I18n;
+import net.minecraft.text.Style;
 import net.minecraft.util.Formatting;
 
 public class EmiTooltip {
@@ -16,7 +17,7 @@ public class EmiTooltip {
 		return TooltipComponent.of(EmiPort.ordered(
 			EmiPort.translatable("tooltip.emi.chance." + type,
 				TEXT_FORMAT.format(chance * 100))
-					.formatted(Formatting.GOLD)));
+					.setStyle(new Style().setFormatting(Formatting.GOLD))));
 	}
 
 	public static List<TooltipComponent> splitTranslate(String key) {

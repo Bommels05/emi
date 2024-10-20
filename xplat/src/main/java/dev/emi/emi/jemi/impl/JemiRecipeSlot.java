@@ -1,6 +1,6 @@
 package dev.emi.emi.jemi.impl;
 
-import java.util.Map;
+/*import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -108,4 +108,4 @@ public class JemiRecipeSlot implements IRecipeSlotView {
 
 	public static record TankInfo(int width, int height, long capacity, boolean showCapacity) {
 	}
-}
+}*/

@@ -34,7 +34,7 @@ public class EmiHistory {
 			return;
 		}
 		int i = HISTORIES.size() - 1;
-		HandledScreen<?> screen = EmiApi.getHandledScreen();
+		HandledScreen screen = EmiApi.getHandledScreen();
 		if (i >= 0) {
 			Screen popped = HISTORIES.remove(i);
 			FORWARD_HISTORIES.add(client.currentScreen);

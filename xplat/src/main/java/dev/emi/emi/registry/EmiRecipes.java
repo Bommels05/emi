@@ -1,13 +1,11 @@
 package dev.emi.emi.registry;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import gnu.trove.map.hash.TCustomHashMap;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Iterables;
@@ -32,10 +30,6 @@ import dev.emi.emi.runtime.EmiHidden;
 import dev.emi.emi.runtime.EmiLog;
 import dev.emi.emi.runtime.EmiReloadLog;
 import dev.emi.emi.runtime.dev.EmiDev;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenCustomHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.util.Identifier;
 
@@ -123,8 +117,8 @@ public class EmiRecipes {
 		private final List<EmiRecipeCategory> categories;
 		private final Map<EmiRecipeCategory, List<EmiIngredient>> workstations;
 		private final List<EmiRecipe> recipes;
-		private Map<EmiStack, List<EmiRecipe>> byInput = new Object2ObjectOpenCustomHashMap<>(new EmiStackList.ComparisonHashStrategy());
-		private Map<EmiStack, List<EmiRecipe>> byOutput = new Object2ObjectOpenCustomHashMap<>(new EmiStackList.ComparisonHashStrategy());
+		private Map<EmiStack, List<EmiRecipe>> byInput = new TCustomHashMap<>(new EmiStackList.ComparisonHashStrategy());
+		private Map<EmiStack, List<EmiRecipe>> byOutput = new TCustomHashMap<>(new EmiStackList.ComparisonHashStrategy());
 		private Map<EmiRecipeCategory, List<EmiRecipe>> byCategory = Maps.newHashMap();
 		private Map<Identifier, EmiRecipe> byId = Maps.newHashMap();
 
@@ -139,7 +133,7 @@ public class EmiRecipes {
 			this.workstations = workstations;
 			this.recipes = List.copyOf(recipes);
 	
-			Object2IntMap<Identifier> duplicateIds = new Object2IntOpenHashMap<>();
+			Map<Identifier, Integer> duplicateIds = new HashMap<>();
 			for (EmiRecipe recipe : recipes) {
 				Identifier id = recipe.getId();
 				EmiRecipeCategory category = recipe.getCategory();
@@ -147,7 +141,7 @@ public class EmiRecipes {
 					EmiReloadLog.warn("Recipe " + id + " loaded with unregistered category: " + category.getId());
 				}
 				if (EmiConfig.logNonTagIngredients && recipe.supportsRecipeTree()) {
-					Set<EmiIngredient> seen = new ObjectArraySet<>(0);
+					Set<EmiIngredient> seen = new HashSet<>(0);
 					for (EmiIngredient ingredient : recipe.getInputs()) {
 						if (ingredient instanceof ListEmiIngredient && !seen.contains(ingredient)) {
 							EmiReloadLog.warn("Recipe " + recipe.getId() + " uses non-tag ingredient: " + ingredient);
@@ -167,16 +161,16 @@ public class EmiRecipes {
 	
 			if (EmiConfig.devMode) {
 				for (Identifier id : duplicateIds.keySet()) {
-					EmiReloadLog.warn(duplicateIds.getInt(id) + " recipes loaded with the same id: " + id);
+					EmiReloadLog.warn(duplicateIds.get(id) + " recipes loaded with the same id: " + id);
 				}
 			}
 	
-			Map<EmiStack, Set<EmiRecipe>> byInput = new Object2ObjectOpenCustomHashMap<>(new EmiStackList.ComparisonHashStrategy());
-			Map<EmiStack, Set<EmiRecipe>> byOutput = new Object2ObjectOpenCustomHashMap<>(new EmiStackList.ComparisonHashStrategy());
+			Map<EmiStack, Set<EmiRecipe>> byInput = new TCustomHashMap<>(new EmiStackList.ComparisonHashStrategy());
+			Map<EmiStack, Set<EmiRecipe>> byOutput = new TCustomHashMap<>(new EmiStackList.ComparisonHashStrategy());
 
 			for (EmiRecipeCategory category : byCategory.keySet()) {
 				String key = EmiUtil.translateId("emi.category.", category.getId());
-				if (category.getName().equals(EmiPort.translatable(key)) && !I18n.hasTranslation(key)) {
+				if (category.getName().equals(EmiPort.translatable(key)) && !EmiUtil.hasTranslation(key)) {
 					EmiReloadLog.warn("Untranslated recipe category " + category.getId());
 				}
 				List<EmiRecipe> cRecipes = byCategory.get(category);

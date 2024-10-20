@@ -1,6 +1,6 @@
 package dev.emi.emi.mixin.accessor;
 
-import org.spongepowered.asm.mixin.Mixin;
+/*import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
 import net.minecraft.client.render.VertexConsumer;
@@ -14,4 +14,4 @@ public interface ItemRendererAccessor {
 
 	@Invoker("renderBakedItemModel")
 	void invokeRenderBakedItemModel(BakedModel model, ItemStack stack, int light, int overlay, MatrixStack matrices, VertexConsumer vertices);
-}
+}*/

@@ -4,10 +4,10 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.inventory.slot.Slot;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
-
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.emi.emi.api.recipe.EmiPlayerInventory;
 import dev.emi.emi.api.recipe.EmiRecipe;
@@ -24,7 +24,6 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
 
 public interface StandardRecipeHandler<T extends ScreenHandler> extends EmiRecipeHandler<T> {
 	
@@ -55,8 +54,8 @@ public interface StandardRecipeHandler<T extends ScreenHandler> extends EmiRecip
 	}
 
 	@Override
-	default EmiPlayerInventory getInventory(HandledScreen<T> screen) {
-		return new EmiPlayerInventory(getInputSources(screen.getScreenHandler()).stream().map(Slot::getStack).map(EmiStack::of).toList());
+	default EmiPlayerInventory getInventory(HandledScreen screen) {
+		return new EmiPlayerInventory(getInputSources((T) screen.screenHandler).stream().map(Slot::getStack).map(EmiStack::of).toList());
 	}
 
 	@Override
@@ -110,7 +109,7 @@ public interface StandardRecipeHandler<T extends ScreenHandler> extends EmiRecip
 		}
 	}
 	
-	private static Map<EmiIngredient, Boolean> getAvailable(EmiRecipe recipe, EmiPlayerInventory inventory) {
+	static Map<EmiIngredient, Boolean> getAvailable(EmiRecipe recipe, EmiPlayerInventory inventory) {
 		Map<EmiIngredient, Boolean> availableForCrafting = new IdentityHashMap<>();
 		List<Boolean> list = inventory.getCraftAvailability(recipe);
 		List<EmiIngredient> inputs = recipe.getInputs();

@@ -1,6 +1,6 @@
 package dev.emi.emi.mixin;
 
-import java.util.List;
+/*import java.util.List;
 import java.util.function.Consumer;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,4 +27,4 @@ public class HoeItemMixin {
 			CallbackInfoReturnable<Consumer<ItemUsageContext>> info) {
 		EmiClient.HOE_ACTIONS.put(info.getReturnValue(), List.of(droppedItem, result.getBlock()));
 	}
-}
+}*/

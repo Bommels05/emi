@@ -1,6 +1,7 @@
 package dev.emi.emi.mixin.conversion;
 
-import org.spongepowered.asm.mixin.Mixin;
+//not possible to mixin into forge
+/*import org.spongepowered.asm.mixin.Mixin;
 
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.EmiStackConvertible;
@@ -18,4 +19,4 @@ public class FluidMixin implements EmiStackConvertible {
 	public EmiStack emi(long amount) {
 		return EmiStack.of((Fluid) (Object) this, amount);
 	}
-}
+}*/

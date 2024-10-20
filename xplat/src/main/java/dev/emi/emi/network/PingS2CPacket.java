@@ -2,15 +2,15 @@ package dev.emi.emi.network;
 
 import dev.emi.emi.platform.EmiClient;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.PacketByteBuf;
 
 public class PingS2CPacket implements EmiPacket {
 
 	public PingS2CPacket() {
 	}
 
-	public PingS2CPacket(PacketByteBuf buf) {
+	public void read(PacketByteBuf buf) {
 	}
 
 	@Override

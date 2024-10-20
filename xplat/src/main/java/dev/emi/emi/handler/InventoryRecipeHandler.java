@@ -2,6 +2,8 @@ package dev.emi.emi.handler;
 
 import java.util.List;
 
+import net.minecraft.inventory.slot.Slot;
+import net.minecraft.screen.CraftingScreenHandler;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Lists;
@@ -13,10 +15,8 @@ import dev.emi.emi.api.recipe.VanillaEmiRecipeCategories;
 import dev.emi.emi.api.recipe.handler.EmiCraftContext;
 import dev.emi.emi.api.recipe.handler.StandardRecipeHandler;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.screen.AbstractRecipeScreenHandler;
 import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 
 public class InventoryRecipeHandler implements StandardRecipeHandler<PlayerScreenHandler> {
@@ -66,7 +66,7 @@ public class InventoryRecipeHandler implements StandardRecipeHandler<PlayerScree
 
 	@Override
 	public @Nullable Slot getOutputSlot(PlayerScreenHandler handler) {
-		return handler.slots.get(0);
+		return (Slot) handler.slots.get(0);
 	}
 
 	@Override
@@ -83,10 +83,9 @@ public class InventoryRecipeHandler implements StandardRecipeHandler<PlayerScree
 	@Override
 	public boolean canCraft(EmiRecipe recipe, EmiCraftContext<PlayerScreenHandler> context) {
 		ScreenHandler sh = context.getScreenHandler();
-		if (sh instanceof AbstractRecipeScreenHandler<?> arsh) {
-			if (recipe instanceof EmiCraftingRecipe crafting) {
-				return crafting.canFit(arsh.getCraftingWidth(), arsh.getCraftingHeight())
-					&& StandardRecipeHandler.super.canCraft(recipe, context);
+		if (recipe instanceof EmiCraftingRecipe crafting) {
+			if ((sh instanceof PlayerScreenHandler && crafting.canFit(2, 2)) || (sh instanceof CraftingScreenHandler && crafting.canFit(3, 3))) {
+				return StandardRecipeHandler.super.canCraft(recipe, context);
 			}
 		}
 		return false;
@@ -96,11 +95,9 @@ public class InventoryRecipeHandler implements StandardRecipeHandler<PlayerScree
 	public List<TooltipComponent> getTooltip(EmiRecipe recipe, EmiCraftContext<PlayerScreenHandler> context) {
 		if (!canCraft(recipe, context)) {
 			ScreenHandler sh = context.getScreenHandler();
-			if (sh instanceof AbstractRecipeScreenHandler<?> arsh) {
-				if (recipe instanceof EmiCraftingRecipe crafting) {
-					if (!crafting.canFit(arsh.getCraftingWidth(), arsh.getCraftingHeight())) {
-						return List.of(TooltipComponent.of(EmiPort.ordered(TOO_SMALL)));
-					}
+			if (recipe instanceof EmiCraftingRecipe crafting) {
+				if ((sh instanceof PlayerScreenHandler && !crafting.canFit(2, 2)) || (sh instanceof CraftingScreenHandler && !crafting.canFit(3, 3))) {
+					return List.of(TooltipComponent.of(EmiPort.ordered(TOO_SMALL)));
 				}
 			}
 		}

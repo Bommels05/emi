@@ -1,21 +1,19 @@
 package dev.emi.emi.screen.widget.config;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import com.google.common.collect.Lists;
 
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.runtime.EmiDrawContext;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.Drawable;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.Style;
+import net.minecraft.util.Formatting;
 
 public class EmiNameWidget implements Drawable {
 	private static MinecraftClient client = MinecraftClient.getInstance();
@@ -49,8 +47,8 @@ public class EmiNameWidget implements Drawable {
 		this.y = y;
 	}
 
-	public IntSet pruneSet(Random rand, int bound, int portion) {
-		IntList ints = new IntArrayList();
+	public Set<Integer> pruneSet(Random rand, int bound, int portion) {
+		Set<Integer> ints = new HashSet<>();
 		for (int i = 0; i < bound; i++) {
 			ints.add(i);
 		}
@@ -58,16 +56,16 @@ public class EmiNameWidget implements Drawable {
 			if (ints.size() == 0) {
 				break;
 			}
-			ints.removeInt(rand.nextInt(ints.size()));
+			ints.remove(rand.nextInt(ints.size()));
 		}
-		return new IntOpenHashSet(ints);
+		return new HashSet<>(ints);
 	}
 
 	public String interpolate(Random source, String first, String second, float progress) {
 		TextRenderer render = client.textRenderer;
 		String both = first + second;
-		int fw = render.getWidth(first);
-		int sw = render.getWidth(second);
+		int fw = render.getStringWidth(first);
+		int sw = render.getStringWidth(second);
 		int width = fw + Math.round((sw - fw) * progress);
 		String ret = "";
 		Random rand = new Random(source.nextLong() + width);
@@ -75,7 +73,7 @@ public class EmiNameWidget implements Drawable {
 		while (true) {
 			for (int i = 0; i < 10; i++) {
 				char c = both.charAt(rand.nextInt(both.length()));
-				int w = render.getWidth(ret + c);
+				int w = render.getStringWidth(ret + c);
 				if (w > width) {
 					continue;
 				}
@@ -89,7 +87,7 @@ public class EmiNameWidget implements Drawable {
 
 	public String transformString(Random rand, String string, float progress) {
 		String ret = "";
-		IntSet glitched = pruneSet(new Random(rand.nextLong()), string.length(), Math.round(string.length() * (1 - progress)));
+		Set<Integer> glitched = pruneSet(new Random(rand.nextLong()), string.length(), Math.round(string.length() * (1 - progress)));
 		for (int i = 0; i < string.length(); i++) {
 			if (glitched.contains(i)) {
 				ret += "§k";
@@ -124,11 +122,11 @@ public class EmiNameWidget implements Drawable {
 		}
 
 		context.drawCenteredTextWithShadow(
-			EmiPort.literal(parts[0], Style.EMPTY.withColor(0xeb7bfc))
+			EmiPort.literal(parts[0], Formatting.LIGHT_PURPLE)
 				.append(EmiPort.literal("  "))
-				.append(EmiPort.literal(parts[1], Style.EMPTY.withColor(0x7bfca2)))
+				.append(EmiPort.literal(parts[1], Formatting.GREEN))
 				.append(EmiPort.literal("  "))
-				.append(EmiPort.literal(parts[2], Style.EMPTY.withColor(0x7bebfc))),
+				.append(EmiPort.literal(parts[2], Formatting.AQUA)),
 			x, y, -1);
 	}
 }

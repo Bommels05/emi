@@ -3,6 +3,9 @@ package dev.emi.emi.screen;
 import java.lang.reflect.Field;
 import java.util.List;
 
+import dev.emi.emi.backport.ButtonManager;
+import net.minecraft.client.resource.language.I18n;
+import net.minecraft.client.util.Window;
 import org.lwjgl.glfw.GLFW;
 
 import dev.emi.emi.EmiPort;
@@ -26,28 +29,32 @@ import net.minecraft.text.Text;
 public class ConfigPresetScreen extends Screen {
 	private final ConfigScreen last;
 	private ListWidget list;
+	private ButtonManager buttonManager;
+	private EmiNameWidget name;
 	public ButtonWidget resetButton;
 
 	public ConfigPresetScreen(ConfigScreen last) {
-		super(EmiPort.translatable("screen.emi.presets"));
+		super();
 		this.last = last;
 	}
 
 	@Override
 	public void init() {
 		super.init();
-		this.addDrawable(new EmiNameWidget(width / 2, 16));
+		buttonManager = new ButtonManager();
+
+		this.name = new EmiNameWidget(width / 2, 16);
 		int w = Math.min(400, width - 40);
 		int x = (width - w) / 2;
 		this.resetButton = EmiPort.newButton(x + 2, height - 30, w / 2 - 2, 20, EmiPort.translatable("gui.done"), button -> {
 			EmiConfig.loadConfig(QDCSS.load("revert", last.originalConfig));
 			MinecraftClient client = MinecraftClient.getInstance();
-			this.init(client, client.getWindow().getScaledWidth(), client.getWindow().getScaledHeight());
-		});
-		this.addDrawableChild(resetButton);
-		this.addDrawableChild(EmiPort.newButton(x + w / 2 + 2, height - 30, w / 2 - 2, 20, EmiPort.translatable("gui.done"), button -> {
+			this.init(client, width, height);
+		}, buttonManager);
+		this.buttons.add(resetButton);
+		this.buttons.add(EmiPort.newButton(x + w / 2 + 2, height - 30, w / 2 - 2, 20, EmiPort.translatable("gui.done"), button -> {
 			this.close();
-		}));
+		}, buttonManager));
 		list = new ListWidget(client, width, height, 40, height - 40);
 		try {
 			for (Field field : ConfigPresets.class.getFields()) {
@@ -66,17 +73,21 @@ public class ConfigPresetScreen extends Screen {
 			}
 		} catch (Exception e) {
 		}
-		this.addSelectableChild(list);
 		updateChanges();
 	}
 
 	@Override
-	public void render(MatrixStack raw, int mouseX, int mouseY, float delta) {
-		EmiDrawContext context = EmiDrawContext.wrap(raw);
+	public void render(int mouseX, int mouseY, float delta) {
+		EmiDrawContext context = EmiDrawContext.wrap(MatrixStack.INSTANCE);
 		list.setScrollAmount(list.getScrollAmount());
-		this.renderBackgroundTexture(0);
-		list.render(context.raw(), mouseX, mouseY, delta);
-		super.render(context.raw(), mouseX, mouseY, delta);
+		if (list.isMouseOver(mouseX, mouseY)) {
+			list.render(context.raw(), mouseX, mouseY, delta);
+		} else {
+			list.render(context.raw(), 0, 0, delta);
+		}
+		EmiRenderHelper.renderSplitBackground(this, list);
+		name.render(context.raw(), mouseX, mouseY, delta);
+		super.render(mouseX, mouseY, delta);
 		if (list.getHoveredEntry() instanceof PresetWidget widget) {
 			if (widget.button.isHovered()) {
 				EmiRenderHelper.drawTooltip(this, context, widget.tooltip, mouseX, mouseY);
@@ -84,23 +95,22 @@ public class ConfigPresetScreen extends Screen {
 		}
 	}
 
-	@Override
 	public void close() {
 		MinecraftClient.getInstance().setScreen(last);
 	}
 	
 	@Override
-	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+	public void keyPressed(char c, int keyCode) {
 		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
 			this.close();
-			return true;
-		} else if (this.client.options.inventoryKey.matchesKey(keyCode, scanCode)) {
+			return;
+		} else if (keyCode == this.client.options.inventoryKey.getCode()) {
 			this.close();
-			return true;
+			return;
 		} else if (keyCode == GLFW.GLFW_KEY_TAB) {
-			return false;
+			return;
 		}
-		return super.keyPressed(keyCode, scanCode, modifiers);
+		super.keyPressed(c, keyCode);
 	}
 
 	public void updateChanges() {
@@ -117,24 +127,42 @@ public class ConfigPresetScreen extends Screen {
 			}
 		}
 		this.resetButton.active = different > 0;
-		this.resetButton.setMessage(EmiPort.translatable("screen.emi.config.reset", different));
+		this.resetButton.message = EmiPort.translatable("screen.emi.config.reset", different).asFormattedString();
+	}
+
+	@Override
+	protected void buttonClicked(ButtonWidget button) {
+		buttonManager.handleClick(button);
+	}
+
+	@Override
+	protected void mouseClicked(int mouseX, int mouseY, int button) {
+		super.mouseClicked(mouseX, mouseY, button);
+		this.list.mouseClicked(mouseX, mouseY, button);
+	}
+
+	@Override
+	protected void mouseReleased(int mouseX, int mouseY, int button) {
+		super.mouseReleased(mouseX, mouseY, button);
+		this.list.mouseReleased(mouseX, mouseY, button);
 	}
 
 	public class PresetWidget extends ListWidget.Entry {
 		private final ButtonWidget button;
 		private final List<TooltipComponent> tooltip;
+		private final ButtonManager buttonManager = new ButtonManager();
 
 		public PresetWidget(Runnable runnable, Text name, List<TooltipComponent> tooltip) {
 			button = EmiPort.newButton(0, 0, 200, 20, name, t -> {
 				runnable.run();
 				updateChanges();
-			});
+			}, buttonManager);
 			this.tooltip = tooltip;
 		}
 
 		@Override
 		public List<? extends Element> children() {
-			return List.of(button);
+			return List.of();
 		}
 
 		@Override
@@ -142,7 +170,16 @@ public class ConfigPresetScreen extends Screen {
 				boolean hovered, float delta) {
 			button.y = y;
 			button.x = x + width / 2 - button.getWidth() / 2;
-			button.render(raw, mouseX, mouseY, delta);
+			button.render(MinecraftClient.getInstance(), mouseX, mouseY);
+		}
+
+		@Override
+		public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+			if (button.isMouseOver(MinecraftClient.getInstance(), (int) mouseX, (int) mouseY)) {
+				buttonManager.handleClick(button);
+				return true;
+			}
+			return false;
 		}
 
 		@Override

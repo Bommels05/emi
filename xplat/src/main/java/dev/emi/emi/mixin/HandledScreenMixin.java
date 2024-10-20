@@ -1,5 +1,8 @@
 package dev.emi.emi.mixin;
 
+import dev.emi.emi.runtime.EmiLog;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Intrinsic;
 import org.spongepowered.asm.mixin.Mixin;
@@ -28,32 +31,33 @@ public abstract class HandledScreenMixin extends Screen {
 	@Shadow
 	protected int backgroundWidth, backgroundHeight, x, y;
 
-	private HandledScreenMixin() { super(null); }
+	private HandledScreenMixin() { super(); }
 
 	@Intrinsic @Override
-	public void renderBackground(MatrixStack raw) {
-		super.renderBackground(raw);
+	public void renderBackground(int alpha) {
+		super.renderBackground(alpha);
 	}
 
 	@Dynamic
-	@Inject(at = @At("RETURN"), method = "renderBackground(Lnet/minecraft/client/util/math/MatrixStack;)V")
-	private void renderBackground(MatrixStack raw, CallbackInfo info) {
-		EmiDrawContext context = EmiDrawContext.wrap(raw);
-		Window window = client.getWindow();
-		int mouseX = (int) (client.mouse.getX() * window.getScaledWidth() / window.getWidth());
-		int mouseY = (int) (client.mouse.getY() * window.getScaledHeight() / window.getHeight());
-		EmiScreenManager.drawBackground(context, mouseX, mouseY, client.getTickDelta());
+	@Inject(at = @At("RETURN"), method = "renderBackground(I)V")
+	private void renderBackground(int alpha, CallbackInfo info) {
+		EmiDrawContext context = EmiDrawContext.wrap(MatrixStack.INSTANCE);
+		MinecraftClient client = MinecraftClient.getInstance();
+		Window window = new Window(client, client.width, client.height);
+		int mouseX = (int) (this.client.mouse.x * window.getScaledWidth() / window.getWidth());
+		int mouseY = (int) (this.client.mouse.y * window.getScaledHeight() / window.getHeight());
+		EmiScreenManager.drawBackground(context, mouseX, mouseY, this.client.ticker.tickDelta);
 	}
 
 	@Inject(at = @At(value = "INVOKE",
-			target = "net/minecraft/client/gui/screen/ingame/HandledScreen.drawForeground(Lnet/minecraft/client/util/math/MatrixStack;II)V",
+			target = "net/minecraft/client/gui/screen/ingame/HandledScreen.drawForeground(II)V",
 			shift = Shift.AFTER),
 		method = "render")
-	private void render(MatrixStack raw, int mouseX, int mouseY, float delta, CallbackInfo info) {
+	private void render(int mouseX, int mouseY, float delta, CallbackInfo info) {
 		if (EmiAgnos.isForge()) {
 			return;
 		}
-		EmiDrawContext context = EmiDrawContext.wrap(raw);
+		EmiDrawContext context = EmiDrawContext.wrap(MatrixStack.INSTANCE);
 		MatrixStack viewStack = RenderSystem.getModelViewStack();
 		viewStack.push();
 		viewStack.translate(-x, -y, 0.0);

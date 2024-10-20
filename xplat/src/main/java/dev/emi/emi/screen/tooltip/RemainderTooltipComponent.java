@@ -8,9 +8,11 @@ import com.google.common.collect.Maps;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.emi.emi.EmiPort;
+import dev.emi.emi.EmiUtil;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.runtime.EmiDrawContext;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
@@ -68,17 +70,17 @@ public class RemainderTooltipComponent implements EmiTooltipComponent {
 				is.setDamage(is.getDamage() - remainder.damage);
 				MatrixStack view = RenderSystem.getModelViewStack();
 				view.push();
-				view.multiplyPositionMatrix(context.matrices().peek().getPositionMatrix());
+				//view.multiplyPositionMatrix(context.matrices().peek().getPositionMatrix());
 				RenderSystem.applyModelViewMatrix();
-				render.item.renderGuiItemOverlay(render.text, is, 18 * 2, 18 * i, "");
+				render.item.method_5178(render.text, MinecraftClient.getInstance().getTextureManager(), is, 18 * 2, 18 * i, "");
 				view.pop();
 				RenderSystem.applyModelViewMatrix();
 				context.drawStack(input, 18 * 2, 18 * i, -1 ^ (EmiIngredient.RENDER_ICON | EmiIngredient.RENDER_AMOUNT | EmiIngredient.RENDER_REMAINDER));
 				Text t = remainder.damage > 0 ? EmiPort.literal("+" + remainder.damage, Formatting.GREEN) : EmiPort.literal("" + remainder.damage, Formatting.RED);
-				int width = render.text.getWidth(t);
+				int width = render.text.getStringWidth(t.asUnformattedString());
 				context.push();
 				context.matrices().translate(0, 0, 200);
-				context.drawText(t, 42 - width, i * 18);
+				context.drawText(t, 42 - width, i * 18, EmiUtil.getColorValue(t.getStyle().getColor()));
 				context.pop();
 			}
 		}
@@ -92,14 +94,14 @@ public class RemainderTooltipComponent implements EmiTooltipComponent {
 			text.draw(EmiPort.literal("->"), 20, 5 + i * 18 - (chanced ? 4 : 0), 0xffffff, true);
 			if (chanced) {
 				Text t = EmiPort.literal(EmiTooltip.TEXT_FORMAT.format(remainder.chance * 100) + "%");
-				int tx = text.renderer.getWidth(t);
-				text.draw(t, 27 - tx / 2, 9 + i * 18, Formatting.GOLD.getColorValue(), false);
+				int tx = text.renderer.getStringWidth(t.asUnformattedString());
+				text.draw(t, 27 - tx / 2, 9 + i * 18, EmiUtil.getColorValue(Formatting.GOLD), false);
 			}
 		}
 	}
 
 	private int getDamageDelta(EmiStack stack, EmiStack remainder) {
-		if (remainder.isEqual(stack)) {
+		if (stack.getItemStack() != null && remainder.getItemStack() != null && ItemStack.equalsIgnoreDamage(stack.getItemStack(), remainder.getItemStack())) {
 			return stack.getItemStack().getDamage() - remainder.getItemStack().getDamage();
 		}
 		return 0;

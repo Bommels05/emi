@@ -1,11 +1,13 @@
 package dev.emi.emi.screen.widget.config;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
 import com.google.common.collect.Lists;
 
 import dev.emi.emi.EmiPort;
+import dev.emi.emi.backport.ButtonManager;
 import dev.emi.emi.config.SidebarPages;
 import dev.emi.emi.config.SidebarType;
 import dev.emi.emi.screen.ConfigScreen.Mutator;
@@ -14,17 +16,16 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
 public class SidebarPagesWidget extends ConfigEntryWidget {
-	private List<ButtonWidget> buttons = Lists.newArrayList();
 	private Mutator<SidebarPages> mutator;
 
 	public SidebarPagesWidget(Text name, List<TooltipComponent> tooltip, Supplier<String> search, Mutator<SidebarPages> mutator) {
 		super(name, tooltip, search, 0);
 		this.mutator = mutator;
-		setChildren(buttons);
 		updateButtons();
 	}
 
 	public void updateButtons() {
+		buttonManager = new ButtonManager();
 		buttons.clear();
 		SidebarPages pages = mutator.get();
 		for (int i = 0; i < pages.pages.size(); i++) {
@@ -35,14 +36,14 @@ public class SidebarPagesWidget extends ConfigEntryWidget {
 					pages.pages.get(j).type = (SidebarType) t;
 					pages.unique();
 				});
-			}));
+			}, buttonManager));
 		}
 		buttons.add(EmiPort.newButton(0, 0, 20, 20, EmiPort.literal("+"), b -> {
 			EnumWidget.page(SidebarType.INDEX, t -> pages.canShowChess() || t != SidebarType.CHESS, t -> {
 				pages.pages.add(new SidebarPages.SidebarPage((SidebarType) t));
 				pages.unique();
 			});
-		}));
+		}, buttonManager));
 	}
 
 	@Override

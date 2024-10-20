@@ -1,6 +1,6 @@
 package dev.emi.emi.jemi;
 
-import java.util.List;
+/*import java.util.List;
 import java.util.Optional;
 
 import dev.emi.emi.api.stack.EmiIngredient;
@@ -81,4 +81,4 @@ public class JemiUtil {
 	public static IIngredientType getFluidType() {
 		return getFluidHelper().getFluidIngredientType();
 	}
-}
+}*/

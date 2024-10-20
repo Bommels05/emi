@@ -1,6 +1,6 @@
 package dev.emi.emi.recipe.special;
 
-import java.util.List;
+/*import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -58,4 +58,4 @@ public class EmiSuspiciousStewRecipe extends EmiPatternCraftingRecipe {
 	private Item getFlower(Random random) {
 		return FLOWERS.get(random.nextInt(FLOWERS.size()));
 	}
-}
+}*/
